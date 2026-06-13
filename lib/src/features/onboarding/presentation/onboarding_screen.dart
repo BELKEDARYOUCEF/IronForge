@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/if_text_styles.dart';
+import '../../../shared/widgets/forge_card.dart';
+import '../../../shared/widgets/forge_chip.dart';
+import '../../../shared/widgets/forge_section_header.dart';
 import '../../../shared/widgets/forge_shell.dart';
 import '../data/user_profile_repository.dart';
 import '../domain/user_profile.dart';
@@ -18,7 +22,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   String level = 'Intermediate';
   String units = 'kg';
   int frequency = 4;
-  String trainingType = 'Powerbuilding';
+  String trainingType = 'PPL';
 
   @override
   Widget build(BuildContext context) {
@@ -27,31 +31,25 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _DropdownSetting(label: 'Goal', value: goal, values: const ['Strength', 'Hypertrophy', 'Fat loss', 'General fitness'], onChanged: (value) => setState(() => goal = value)),
-          _DropdownSetting(label: 'Level', value: level, values: const ['Beginner', 'Intermediate', 'Advanced'], onChanged: (value) => setState(() => level = value)),
-          _DropdownSetting(label: 'Units', value: units, values: const ['kg', 'lbs'], onChanged: (value) => setState(() => units = value)),
-          StepperSetting(
-            label: 'Training days per week',
-            value: frequency,
-            onChanged: (value) => setState(() => frequency = value.clamp(1, 7)),
-          ),
-          _DropdownSetting(label: 'Training type', value: trainingType, values: const ['Powerbuilding', 'Bodybuilding', 'Powerlifting', 'General strength'], onChanged: (value) => setState(() => trainingType = value)),
-          const SizedBox(height: 16),
+          const Text('Forge your setup', style: IFText.hero),
+          const SizedBox(height: 8),
+          const Text('Choose the baseline. You can edit it anytime.', style: IFText.bodyMuted),
+          const SizedBox(height: 20),
+          _ChoiceGroup(label: 'Goal', value: goal, values: const ['Strength', 'Hypertrophy', 'Powerbuilding', 'Fat Loss'], onChanged: (value) => setState(() => goal = value)),
+          _ChoiceGroup(label: 'Level', value: level, values: const ['Beginner', 'Intermediate', 'Advanced'], onChanged: (value) => setState(() => level = value)),
+          _ChoiceGroup(label: 'Units', value: units, values: const ['kg', 'lbs'], onChanged: (value) => setState(() => units = value)),
+          _FrequencyPicker(value: frequency, onChanged: (value) => setState(() => frequency = value)),
+          _ChoiceGroup(label: 'Training type', value: trainingType, values: const ['PPL', 'Upper/Lower', 'Full Body', 'Bro Split'], onChanged: (value) => setState(() => trainingType = value)),
+          const SizedBox(height: 20),
           ElevatedButton(
             onPressed: () async {
               await ref.read(userProfileRepositoryProvider).saveProfile(
-                    UserProfile(
-                      goal: goal,
-                      level: level,
-                      units: units,
-                      frequencyPerWeek: frequency,
-                      trainingType: trainingType,
-                    ),
+                    UserProfile(goal: goal, level: level, units: units, frequencyPerWeek: frequency, trainingType: trainingType),
                   );
               ref.invalidate(userProfileProvider);
               if (context.mounted) context.go('/');
             },
-            child: const Text('Save setup'),
+            child: const Text('FINISH SETUP'),
           ),
         ],
       ),
@@ -59,8 +57,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 }
 
-class _DropdownSetting extends StatelessWidget {
-  const _DropdownSetting({required this.label, required this.value, required this.values, required this.onChanged});
+class _ChoiceGroup extends StatelessWidget {
+  const _ChoiceGroup({required this.label, required this.value, required this.values, required this.onChanged});
 
   final String label;
   final String value;
@@ -70,39 +68,42 @@ class _DropdownSetting extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: DropdownButtonFormField<String>(
-        initialValue: value,
-        decoration: InputDecoration(labelText: label),
-        items: [
-          for (final item in values) DropdownMenuItem(value: item, child: Text(item)),
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ForgeSectionHeader(title: label),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final item in values) ForgeChip(label: item, selected: value == item, onTap: () => onChanged(item)),
+            ],
+          ),
         ],
-        onChanged: (value) {
-          if (value != null) onChanged(value);
-        },
       ),
     );
   }
 }
 
-class StepperSetting extends StatelessWidget {
-  const StepperSetting({super.key, required this.label, required this.value, required this.onChanged});
+class _FrequencyPicker extends StatelessWidget {
+  const _FrequencyPicker({required this.value, required this.onChanged});
 
-  final String label;
   final int value;
   final ValueChanged<int> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        title: Text(label),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: ForgeCard(
+        child: Row(
           children: [
-            IconButton(onPressed: () => onChanged(value - 1), icon: const Icon(Icons.remove)),
-            Text('$value'),
-            IconButton(onPressed: () => onChanged(value + 1), icon: const Icon(Icons.add)),
+            const Expanded(child: Text('Training days per week', style: IFText.cardTitle)),
+            IconButton(onPressed: () => onChanged((value - 1).clamp(3, 6)), icon: const Icon(Icons.remove_rounded)),
+            Text('$value', style: IFText.h2),
+            IconButton(onPressed: () => onChanged((value + 1).clamp(3, 6)), icon: const Icon(Icons.add_rounded)),
           ],
         ),
       ),

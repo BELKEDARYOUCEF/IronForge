@@ -256,6 +256,47 @@ Framework :
 Flutter
 ```
 
+## 14 juin 2026 - Redesign IronForge rouge/noir
+
+Objectif :
+
+- Transformer l'UI existante sans repartir de zero.
+- Garder Hive, repositories, tests, package Android `com.ironforge.app`.
+- Ne pas ajouter Firebase ni RevenueCat.
+
+Travail effectue :
+
+- Remplacement du theme teal par la palette IronForge rouge/noir.
+- Ajout de `IFColors` et `IFText`.
+- Ajout du design system : cards, chips, metric tiles, section headers, empty states, bottom nav, PR celebration.
+- Ajout d'une bottom navigation persistante.
+- Redesign Home dashboard.
+- Redesign workout logger dense avec sets table, timer compact, plate calculator preview et PR dialog.
+- Ajout des routes/ecrans `History`, `Rest Timer`, `Plate Calculator`, `AI Coach`.
+- Redesign Progress avec tabs et chart rouge.
+- Redesign Exercises avec search, filtres, favoris et custom exercises conserves.
+- Redesign Routines en `Programs`, avec `My Programs` et `Explore`.
+- Redesign Onboarding.
+- Redesign Premium en placeholder `Coming soon`, sans achat reel.
+- Ajout des dossiers assets placeholders.
+- Ajout de la dependance `percent_indicator`.
+
+Validation :
+
+```text
+flutter pub get
+OK
+
+flutter analyze
+No issues found
+
+flutter test
+8 tests passed
+
+flutter build apk --debug
+build/app/outputs/flutter-apk/app-debug.apk
+```
+
 Etat :
 
 - Le projet est pret a recevoir un vrai keystore.
