@@ -223,6 +223,39 @@ flutter build apk --debug
 build/app/outputs/flutter-apk/app-debug.apk
 ```
 
+## 13 juin 2026 - Preparation depot GitHub pour analyse externe
+
+Travail effectue :
+
+- Mise a jour de `.gitignore`.
+- Ajout des exclusions pour secrets, environnements locaux, artefacts APK/AAB, coverage, previews et notes locales.
+- Verification que les fichiers locaux `app_preview.png` et `tester l’app de 3 façons` sont ignores.
+- Creation du commit Git :
+
+```text
+5207a92 Complete offline IronForge app foundation
+```
+
+- Push du projet sur GitHub.
+
+Depot GitHub :
+
+```text
+https://github.com/BELKEDARYOUCEF/IronForge
+```
+
+Branche :
+
+```text
+main
+```
+
+Framework :
+
+```text
+Flutter
+```
+
 Etat :
 
 - Le projet est pret a recevoir un vrai keystore.
