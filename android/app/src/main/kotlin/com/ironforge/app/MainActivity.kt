@@ -1,4 +1,4 @@
-package com.example.ironforge
+package com.ironforge.app
 
 import io.flutter.embedding.android.FlutterActivity
 

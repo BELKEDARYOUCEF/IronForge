@@ -1,0 +1,4 @@
+storePassword=change-me
+keyPassword=change-me
+keyAlias=ironforge
+storeFile=/absolute/path/to/ironforge-release-key.jks

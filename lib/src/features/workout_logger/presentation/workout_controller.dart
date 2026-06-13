@@ -1,21 +1,31 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../core/sample_data.dart';
 import '../../exercises/domain/exercise.dart';
+import '../data/workout_repository.dart';
 import '../domain/workout.dart';
 import '../domain/workout_math.dart';
 
 final workoutControllerProvider =
     StateNotifierProvider<WorkoutController, WorkoutSession>((ref) {
-  return WorkoutController();
+  return WorkoutController(ref);
 });
 
 class WorkoutController extends StateNotifier<WorkoutSession> {
-  WorkoutController()
-      : super(WorkoutSession(id: const Uuid().v4(), startedAt: DateTime.now()));
+  WorkoutController(this._ref)
+      : super(WorkoutSession(id: const Uuid().v4(), startedAt: DateTime.now())) {
+    _loadHistory();
+  }
 
+  final Ref _ref;
   final _overload = const ProgressiveOverloadEngine();
+  List<WorkoutSession> _history = const [];
+
+  WorkoutRepository get _repository => _ref.read(workoutRepositoryProvider);
+
+  Future<void> _loadHistory() async {
+    _history = await _repository.loadHistory();
+  }
 
   void addExercise(Exercise exercise) {
     if (state.exercises.any((item) => item.exerciseId == exercise.id)) return;
@@ -53,8 +63,74 @@ class WorkoutController extends StateNotifier<WorkoutSession> {
     );
   }
 
+  void updateSet(String exerciseId, int setIndex, LoggedSet set) {
+    final exercise = state.exercises.firstWhere((item) => item.exerciseId == exerciseId);
+    if (setIndex < 0 || setIndex >= exercise.sets.length) return;
+    exercise.sets[setIndex] = set;
+    state = WorkoutSession(
+      id: state.id,
+      startedAt: state.startedAt,
+      exercises: [...state.exercises],
+      completedAt: state.completedAt,
+      name: state.name,
+    );
+  }
+
+  void deleteSet(String exerciseId, int setIndex) {
+    final exercise = state.exercises.firstWhere((item) => item.exerciseId == exerciseId);
+    if (setIndex < 0 || setIndex >= exercise.sets.length) return;
+    exercise.sets.removeAt(setIndex);
+    state = WorkoutSession(
+      id: state.id,
+      startedAt: state.startedAt,
+      exercises: [...state.exercises],
+      completedAt: state.completedAt,
+      name: state.name,
+    );
+  }
+
+  void updateExerciseNotes(String exerciseId, String notes) {
+    final exercises = [
+      for (final exercise in state.exercises)
+        if (exercise.exerciseId == exerciseId)
+          LoggedExercise(
+            exerciseId: exercise.exerciseId,
+            exerciseName: exercise.exerciseName,
+            sets: [...exercise.sets],
+            restSeconds: exercise.restSeconds,
+            notes: notes.trim().isEmpty ? null : notes.trim(),
+          )
+        else
+          exercise,
+    ];
+
+    state = WorkoutSession(
+      id: state.id,
+      startedAt: state.startedAt,
+      exercises: exercises,
+      completedAt: state.completedAt,
+      name: state.name,
+    );
+  }
+
+  Future<void> finishWorkout() async {
+    final completed = WorkoutSession(
+      id: state.id,
+      startedAt: state.startedAt,
+      exercises: [...state.exercises],
+      completedAt: DateTime.now(),
+      name: state.name,
+    );
+
+    await _repository.saveWorkout(completed);
+    _ref.invalidate(workoutHistoryProvider);
+    _history = await _repository.loadHistory();
+
+    state = WorkoutSession(id: const Uuid().v4(), startedAt: DateTime.now());
+  }
+
   bool isPr(String exerciseId, LoggedSet set) {
-    final history = sampleHistory
+    final history = _history
         .expand((workout) => workout.exercises)
         .where((exercise) => exercise.exerciseId == exerciseId)
         .expand((exercise) => exercise.sets);
@@ -62,7 +138,7 @@ class WorkoutController extends StateNotifier<WorkoutSession> {
   }
 
   LoggedSet? _lastKnownSet(String exerciseId) {
-    for (final workout in sampleHistory) {
+    for (final workout in _history) {
       for (final exercise in workout.exercises) {
         if (exercise.exerciseId == exerciseId && exercise.sets.isNotEmpty) {
           return exercise.sets.last;
@@ -72,4 +148,3 @@ class WorkoutController extends StateNotifier<WorkoutSession> {
     return null;
   }
 }
-

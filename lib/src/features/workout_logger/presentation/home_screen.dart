@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/app_theme.dart';
 import '../../../shared/widgets/forge_shell.dart';
+import '../../onboarding/data/user_profile_repository.dart';
+import '../../progress/domain/progress_stats.dart';
+import '../data/workout_repository.dart';
+import '../domain/workout.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final history = ref.watch(workoutHistoryProvider);
+    final profile = ref.watch(userProfileProvider).valueOrNull;
+
     return ForgeShell(
       title: 'IronForge',
       child: ListView(
@@ -20,7 +28,7 @@ class HomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Last bench: 100 kg x 8. PR range: 102.5 kg x 8.',
+            'Offline workout log for strength progress.',
             style: TextStyle(color: forgeSteel, fontSize: 16),
           ),
           const SizedBox(height: 24),
@@ -29,7 +37,17 @@ class HomeScreen extends StatelessWidget {
             child: const Text('START WORKOUT'),
           ),
           const SizedBox(height: 16),
-          _StatGrid(),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.tune, color: forgeElectric),
+              title: Text(profile == null ? 'Complete setup' : '${profile.goal} • ${profile.level}'),
+              subtitle: Text(profile == null ? 'Goal, level, units, frequency, training type' : '${profile.frequencyPerWeek} days/week • ${profile.units} • ${profile.trainingType}'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.go('/onboarding'),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _StatGrid(history: history),
           const SizedBox(height: 16),
           const _NavTile(label: 'Progress', route: '/progress'),
           const _NavTile(label: 'Exercise Library', route: '/exercises'),
@@ -42,8 +60,16 @@ class HomeScreen extends StatelessWidget {
 }
 
 class _StatGrid extends StatelessWidget {
+  const _StatGrid({required this.history});
+
+  final AsyncValue<List<WorkoutSession>> history;
+
   @override
   Widget build(BuildContext context) {
+    final sessions = history.valueOrNull ?? const [];
+    final stats = ProgressStats(sessions);
+    final weekVolume = stats.volumeSince(DateTime.now().subtract(const Duration(days: 7)));
+
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -51,11 +77,11 @@ class _StatGrid extends StatelessWidget {
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
       childAspectRatio: 1.65,
-      children: const [
-        _StatCard(label: 'Streak', value: '6 days'),
-        _StatCard(label: 'Week Volume', value: '18.4t'),
-        _StatCard(label: 'PRs', value: '3'),
-        _StatCard(label: 'Consistency', value: '91%'),
+      children: [
+        _StatCard(label: 'Workouts', value: '${sessions.length}'),
+        _StatCard(label: 'Week Volume', value: '${(weekVolume / 1000).toStringAsFixed(1)}t'),
+        _StatCard(label: 'Sets', value: '${stats.totalSets}'),
+        _StatCard(label: 'Best Bench', value: '${stats.bestE1rmFor('bench_press').toStringAsFixed(0)} kg'),
       ],
     );
   }
