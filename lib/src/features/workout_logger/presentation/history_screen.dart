@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/app_theme.dart';
+import '../../../core/if_spacing.dart';
 import '../../../core/if_text_styles.dart';
 import '../../../shared/widgets/forge_card.dart';
 import '../../../shared/widgets/forge_chip.dart';
@@ -53,14 +54,15 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             );
           }
 
-          final filtered = _filtered(sessions);
+          final allTimePRs = _computeAllTimePRs(sessions);
+          final filtered = _filtered(sessions, allTimePRs);
           final groups = _groupByDay(filtered);
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
             children: [
               ForgeCard(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(IFSpacing.paddingCard),
                 child: Row(
                   children: [
                     _HistoryMetric(
@@ -74,19 +76,23 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final item in const ['All', 'Workouts', 'PRs', 'Notes'])
-                    ForgeChip(
-                        label: item,
-                        selected: filter == item,
-                        onTap: () => setState(() => filter = item)),
-                ],
+              const SizedBox(height: IFSpacing.spacingBlock),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    for (final item in const ['All', 'Workouts', 'PRs', 'Notes'])
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ForgeChip(
+                            label: item,
+                            selected: filter == item,
+                            onTap: () => setState(() => filter = item)),
+                      ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: IFSpacing.spacingBlock),
               if (filtered.isEmpty)
                 const ForgeEmptyState(
                   compact: true,
@@ -97,9 +103,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               else
                 for (final group in groups.entries) ...[
                   ForgeSectionHeader(title: group.key),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   for (final session in group.value)
-                    _HistoryCard(session: session),
+                    _HistoryCard(session: session, allTimePRs: allTimePRs),
                   const SizedBox(height: 4),
                 ],
             ],
@@ -109,15 +115,32 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
   }
 
-  List<WorkoutSession> _filtered(List<WorkoutSession> sessions) {
+  /// Returns exerciseId → all-time best e1RM across all sessions.
+  Map<String, double> _computeAllTimePRs(List<WorkoutSession> sessions) {
+    final map = <String, double>{};
+    for (final session in sessions) {
+      for (final exercise in session.exercises) {
+        final best = exercise.bestE1rm;
+        if (best > 0) {
+          final current = map[exercise.exerciseId] ?? 0;
+          if (best > current) map[exercise.exerciseId] = best;
+        }
+      }
+    }
+    return map;
+  }
+
+  List<WorkoutSession> _filtered(
+      List<WorkoutSession> sessions, Map<String, double> allTimePRs) {
     return switch (filter) {
       'Notes' => sessions
           .where((session) =>
               session.exercises.any((exercise) => exercise.notes != null))
           .toList(),
       'PRs' => sessions
-          .where((session) =>
-              session.exercises.any((exercise) => exercise.bestE1rm > 0))
+          .where((session) => session.exercises.any((exercise) =>
+              exercise.bestE1rm > 0 &&
+              exercise.bestE1rm >= (allTimePRs[exercise.exerciseId] ?? 0)))
           .toList(),
       _ => sessions,
     };
@@ -142,9 +165,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 }
 
 class _HistoryCard extends StatelessWidget {
-  const _HistoryCard({required this.session});
+  const _HistoryCard({required this.session, required this.allTimePRs});
 
   final WorkoutSession session;
+  final Map<String, double> allTimePRs;
 
   @override
   Widget build(BuildContext context) {
@@ -156,27 +180,27 @@ class _HistoryCard extends StatelessWidget {
     final duration = _durationLabel(session);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: IFSpacing.spacingBlock),
       child: ForgeCard(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(IFSpacing.paddingCard),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  width: 42,
-                  height: 42,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     color: IFColors.red.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(13),
+                    borderRadius: BorderRadius.circular(12),
                     border:
                         Border.all(color: IFColors.red.withValues(alpha: 0.25)),
                   ),
                   child: const Icon(Icons.fitness_center_rounded,
-                      color: IFColors.red),
+                      color: IFColors.red, size: 20),
                 ),
-                const SizedBox(width: 11),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,9 +209,9 @@ class _HistoryCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: IFText.h3),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 2),
                       Text(
-                          '$time • ${session.exercises.length} exercises • ${session.totalSets} sets',
+                          '$time · ${session.exercises.length} ex · ${session.totalSets} sets',
                           style: IFText.micro),
                     ],
                   ),
@@ -205,9 +229,14 @@ class _HistoryCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             for (final exercise in session.exercises)
-              _ExerciseHistoryRow(exercise: exercise),
+              _ExerciseHistoryRow(
+                exercise: exercise,
+                isPR: exercise.bestE1rm > 0 &&
+                    exercise.bestE1rm >=
+                        (allTimePRs[exercise.exerciseId] ?? 0),
+              ),
           ],
         ),
       ),
@@ -225,31 +254,36 @@ class _HistoryCard extends StatelessWidget {
 }
 
 class _ExerciseHistoryRow extends StatelessWidget {
-  const _ExerciseHistoryRow({required this.exercise});
+  const _ExerciseHistoryRow({required this.exercise, required this.isPR});
 
   final LoggedExercise exercise;
+  final bool isPR;
 
   @override
   Widget build(BuildContext context) {
     final bestSet = _bestSet(exercise);
     final bestLabel = bestSet == null
-        ? '-'
+        ? '—'
         : bestSet.weight == 0
-            ? 'Bodyweight'
+            ? 'BW'
             : '${bestSet.weight.g} kg';
 
     return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      margin: const EdgeInsets.only(top: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: IFColors.panel2,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: IFColors.borderSoft),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+            color: isPR
+                ? IFColors.gold.withValues(alpha: 0.35)
+                : IFColors.borderSoft,
+            width: isPR ? 1 : IFSpacing.borderWidth),
       ),
       child: Row(
         children: [
           const Icon(Icons.chevron_right_rounded,
-              color: IFColors.textFaint, size: 19),
+              color: IFColors.textFaint, size: 17),
           const SizedBox(width: 4),
           Expanded(
             child: Column(
@@ -259,17 +293,36 @@ class _ExerciseHistoryRow extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: IFText.cardTitle),
-                const SizedBox(height: 2),
+                const SizedBox(height: 1),
                 Text(
-                    '${exercise.sets.length} sets • best ${exercise.bestE1rm.g} kg e1RM',
+                    '${exercise.sets.length} sets · best ${exercise.bestE1rm.g} kg e1RM',
                     style: IFText.micro),
               ],
             ),
           ),
           const SizedBox(width: 8),
+          if (isPR) ...[
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: IFColors.gold.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                    color: IFColors.gold.withValues(alpha: 0.5)),
+              ),
+              child: const Text('PR',
+                  style: TextStyle(
+                      color: IFColors.gold,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 10)),
+            ),
+            const SizedBox(width: 6),
+          ],
           Text(bestLabel,
-              style: const TextStyle(
-                  color: IFColors.red, fontWeight: FontWeight.w900)),
+              style: TextStyle(
+                  color: isPR ? IFColors.gold : IFColors.red,
+                  fontWeight: FontWeight.w900)),
         ],
       ),
     );
