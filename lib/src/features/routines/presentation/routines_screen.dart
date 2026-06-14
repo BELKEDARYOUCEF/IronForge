@@ -7,6 +7,7 @@ import '../../../core/if_text_styles.dart';
 import '../../../shared/widgets/forge_card.dart';
 import '../../../shared/widgets/forge_chip.dart';
 import '../../../shared/widgets/forge_empty_state.dart';
+import '../../../shared/widgets/forge_primary_button.dart';
 import '../../../shared/widgets/forge_shell.dart';
 import '../data/routine_repository.dart';
 import '../domain/routine.dart';
@@ -27,41 +28,58 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
 
     return ForgeShell(
       title: 'Programs',
-      actions: [IconButton(onPressed: () => _showRoutineDialog(context, ref), icon: const Icon(Icons.add_rounded))],
+      actions: [
+        IconButton(
+          onPressed: () => _showRoutineDialog(context, ref),
+          icon: const Icon(Icons.add_rounded),
+        ),
+      ],
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
         children: [
           Wrap(
             spacing: 8,
+            runSpacing: 8,
             children: [
-              for (final item in const ['My Programs', 'Explore']) ForgeChip(label: item, selected: tab == item, onTap: () => setState(() => tab = item)),
+              for (final item in const ['My Programs', 'Explore'])
+                ForgeChip(
+                  label: item,
+                  selected: tab == item,
+                  onTap: () => setState(() => tab = item),
+                ),
             ],
           ),
           const SizedBox(height: 16),
           if (tab == 'Explore') ...[
-            for (final program in const [
-              ('PPL 6 Day Split', 'Intermediate • 6 days/week', Icons.local_fire_department_rounded),
-              ('5x5 Strength', 'Beginner • 3 days/week', Icons.fitness_center_rounded),
-              ('Upper / Lower', 'Intermediate • 4 days/week', Icons.swap_vert_rounded),
-              ('Bro Split', 'All levels • 5 days/week', Icons.emoji_events_rounded),
-            ])
+            for (final program in _explorePrograms)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: _ProgramCard(title: program.$1, subtitle: program.$2, icon: program.$3),
+                child: _ProgramCard(program: program),
               ),
           ] else ...[
-            ElevatedButton.icon(onPressed: () => _showRoutineDialog(context, ref), icon: const Icon(Icons.add_rounded), label: const Text('BUILD CUSTOM PROGRAM')),
+            ForgePrimaryButton(
+              label: 'BUILD CUSTOM PROGRAM',
+              icon: Icons.add_rounded,
+              height: 48,
+              onPressed: () => _showRoutineDialog(context, ref),
+            ),
             const SizedBox(height: 12),
             routines.when(
-              loading: () => const LinearProgressIndicator(),
-              error: (error, stackTrace) => Text('Programs unavailable: $error'),
+              loading: () => const LinearProgressIndicator(color: IFColors.red),
+              error: (error, stackTrace) =>
+                  Text('Programs unavailable: $error'),
               data: (items) {
                 if (items.isEmpty) {
                   return ForgeEmptyState(
                     icon: Icons.rocket_launch_rounded,
                     title: 'Create your first program.',
-                    message: 'Build a routine with progression rules and keep it offline.',
-                    action: OutlinedButton.icon(onPressed: () => _showRoutineDialog(context, ref), icon: const Icon(Icons.add_rounded), label: const Text('NEW PROGRAM')),
+                    message:
+                        'Build a routine with progression rules and keep it offline.',
+                    action: ForgePrimaryButton(
+                      label: 'NEW PROGRAM',
+                      icon: Icons.add_rounded,
+                      onPressed: () => _showRoutineDialog(context, ref),
+                    ),
                   );
                 }
 
@@ -70,36 +88,16 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
                     for (final routine in items)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: ForgeCard(
-                          child: ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(colors: [IFColors.redDark, IFColors.black2]),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(Icons.rocket_launch_rounded, color: IFColors.text),
-                            ),
-                            title: Text(routine.name, style: IFText.cardTitle),
-                            subtitle: Text('${routine.daysPerWeek} days/week • ${routine.progressionLabel}'),
-                            trailing: PopupMenuButton<String>(
-                              icon: const Icon(Icons.more_vert_rounded),
-                              onSelected: (action) async {
-                                if (action == 'edit') {
-                                  await _showRoutineDialog(context, ref, routine: routine);
-                                } else if (action == 'delete') {
-                                  await ref.read(routineRepositoryProvider).deleteRoutine(routine.id);
-                                  ref.invalidate(routinesProvider);
-                                }
-                              },
-                              itemBuilder: (context) => const [
-                                PopupMenuItem(value: 'edit', child: Text('Edit')),
-                                PopupMenuItem(value: 'delete', child: Text('Delete')),
-                              ],
-                            ),
-                          ),
+                        child: _RoutineCard(
+                          routine: routine,
+                          onEdit: () => _showRoutineDialog(context, ref,
+                              routine: routine),
+                          onDelete: () async {
+                            await ref
+                                .read(routineRepositoryProvider)
+                                .deleteRoutine(routine.id);
+                            ref.invalidate(routinesProvider);
+                          },
                         ),
                       ),
                   ],
@@ -112,45 +110,106 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
     );
   }
 
-  Future<void> _showRoutineDialog(BuildContext context, WidgetRef ref, {Routine? routine}) async {
+  Future<void> _showRoutineDialog(BuildContext context, WidgetRef ref,
+      {Routine? routine}) async {
     final nameController = TextEditingController(text: routine?.name ?? '');
-    final daysController = TextEditingController(text: '${routine?.daysPerWeek ?? 3}');
-    final stepController = TextEditingController(text: '${routine?.progressionStepKg ?? 2.5}');
+    final daysController =
+        TextEditingController(text: '${routine?.daysPerWeek ?? 3}');
+    final stepController =
+        TextEditingController(text: '${routine?.progressionStepKg ?? 2.5}');
     final notesController = TextEditingController(text: routine?.notes ?? '');
 
-    final saved = await showDialog<Routine>(
+    final saved = await showModalBottomSheet<Routine>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(routine == null ? 'New Program' : 'Edit Program'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Name')),
-            TextField(controller: daysController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Days per week')),
-            TextField(controller: stepController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Progression step kg')),
-            TextField(controller: notesController, minLines: 1, maxLines: 3, decoration: const InputDecoration(labelText: 'Notes')),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              final name = nameController.text.trim();
-              if (name.isEmpty) return;
-              Navigator.pop(
-                context,
-                Routine(
-                  id: routine?.id ?? const Uuid().v4(),
-                  name: name,
-                  daysPerWeek: int.tryParse(daysController.text) ?? 3,
-                  progressionStepKg: double.tryParse(stepController.text) ?? 2.5,
-                  notes: notesController.text.trim().isEmpty ? null : notesController.text.trim(),
+      isScrollControlled: true,
+      backgroundColor: IFColors.black,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+              16, 12, 16, 16 + MediaQuery.viewInsetsOf(context).bottom),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: IFColors.border,
+                  borderRadius: BorderRadius.circular(999),
                 ),
-              );
-            },
-            child: const Text('Save'),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                      child: Text(
+                          routine == null ? 'New Program' : 'Edit Program',
+                          style: IFText.h2)),
+                  const Icon(Icons.rocket_launch_rounded, color: IFColors.red),
+                ],
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Name')),
+              const SizedBox(height: 10),
+              TextField(
+                  controller: daysController,
+                  keyboardType: TextInputType.number,
+                  decoration:
+                      const InputDecoration(labelText: 'Days per week')),
+              const SizedBox(height: 10),
+              TextField(
+                  controller: stepController,
+                  keyboardType: TextInputType.number,
+                  decoration:
+                      const InputDecoration(labelText: 'Progression step kg')),
+              const SizedBox(height: 10),
+              TextField(
+                  controller: notesController,
+                  minLines: 1,
+                  maxLines: 3,
+                  decoration: const InputDecoration(labelText: 'Notes')),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                      child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('CANCEL'))),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ForgePrimaryButton(
+                      label: 'SAVE',
+                      icon: Icons.check_rounded,
+                      height: 46,
+                      onPressed: () {
+                        final name = nameController.text.trim();
+                        if (name.isEmpty) return;
+                        Navigator.pop(
+                          context,
+                          Routine(
+                            id: routine?.id ?? const Uuid().v4(),
+                            name: name,
+                            daysPerWeek: int.tryParse(daysController.text) ?? 3,
+                            progressionStepKg:
+                                double.tryParse(stepController.text) ?? 2.5,
+                            notes: notesController.text.trim().isEmpty
+                                ? null
+                                : notesController.text.trim(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
 
@@ -166,12 +225,44 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
   }
 }
 
-class _ProgramCard extends StatelessWidget {
-  const _ProgramCard({required this.title, required this.subtitle, required this.icon});
+const _explorePrograms = [
+  _ExploreProgram(
+      'PPL 6 Day Split',
+      'Intermediate • 6 days/week',
+      'POPULAR',
+      Icons.local_fire_department_rounded,
+      [IFColors.redDark, IFColors.panel, IFColors.black]),
+  _ExploreProgram(
+      '5x5 Strength',
+      'Beginner • 3 days/week',
+      'STRENGTH',
+      Icons.fitness_center_rounded,
+      [IFColors.panel3, IFColors.redDark, IFColors.black]),
+  _ExploreProgram('Upper / Lower', 'Intermediate • 4 days/week', 'BALANCED',
+      Icons.swap_vert_rounded, [IFColors.blue, IFColors.panel, IFColors.black]),
+  _ExploreProgram(
+      'Bro Split',
+      'Advanced • 5 days/week',
+      'VOLUME',
+      Icons.emoji_events_rounded,
+      [IFColors.gold, IFColors.redDark, IFColors.black]),
+];
+
+class _ExploreProgram {
+  const _ExploreProgram(
+      this.title, this.subtitle, this.badge, this.icon, this.colors);
 
   final String title;
   final String subtitle;
+  final String badge;
   final IconData icon;
+  final List<Color> colors;
+}
+
+class _ProgramCard extends StatelessWidget {
+  const _ProgramCard({required this.program});
+
+  final _ExploreProgram program;
 
   @override
   Widget build(BuildContext context) {
@@ -182,28 +273,135 @@ class _ProgramCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [IFColors.redDark, IFColors.panel, IFColors.black]),
+          gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: program.colors),
         ),
         child: Row(
           children: [
-            Icon(icon, color: IFColors.text, size: 42),
+            Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.24),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+              ),
+              child: Icon(program.icon, color: IFColors.text, size: 31),
+            ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: IFText.h2),
+                  Row(
+                    children: [
+                      Expanded(
+                          child: Text(program.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: IFText.h2)),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: IFColors.black.withValues(alpha: 0.32),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(program.badge,
+                            style: const TextStyle(
+                                fontSize: 9, fontWeight: FontWeight.w900)),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 6),
-                  Text(subtitle, style: IFText.bodyMuted),
+                  Text(program.subtitle, style: IFText.bodyMuted),
                   const SizedBox(height: 8),
-                  const ForgeChip(label: 'Auto progression', icon: Icons.auto_awesome_rounded),
+                  const ForgeChip(
+                      label: 'Auto progression',
+                      icon: Icons.auto_awesome_rounded),
                 ],
               ),
             ),
             const Icon(Icons.star_border_rounded, color: IFColors.gold),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _RoutineCard extends StatelessWidget {
+  const _RoutineCard({
+    required this.routine,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final Routine routine;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return ForgeCard(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                  colors: [IFColors.red, IFColors.redDark]),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.rocket_launch_rounded, color: Colors.white),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(routine.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: IFText.cardTitle),
+                const SizedBox(height: 4),
+                Text(
+                    '${routine.daysPerWeek} days/week • ${routine.progressionLabel}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: IFText.bodyMuted),
+                if (routine.notes != null) ...[
+                  const SizedBox(height: 4),
+                  Text(routine.notes!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: IFText.micro),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(Icons.star_border_rounded, color: IFColors.gold),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded),
+            onSelected: (action) {
+              if (action == 'edit') {
+                onEdit();
+              } else if (action == 'delete') {
+                onDelete();
+              }
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: 'edit', child: Text('Edit')),
+              PopupMenuItem(value: 'delete', child: Text('Delete')),
+            ],
+          ),
+        ],
       ),
     );
   }
