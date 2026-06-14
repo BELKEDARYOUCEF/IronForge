@@ -10,9 +10,12 @@ import '../../../core/if_text_styles.dart';
 import '../../../shared/widgets/forge_card.dart';
 import '../../../shared/widgets/forge_chip.dart';
 import '../../../shared/widgets/forge_empty_state.dart';
+import '../../../shared/widgets/forge_primary_button.dart';
+import '../../../shared/widgets/forge_progress_ring.dart';
 import '../../../shared/widgets/forge_shell.dart';
 import '../../../shared/widgets/pr_celebration.dart';
 import '../../exercises/data/exercise_repository.dart';
+import '../../exercises/domain/exercise.dart';
 import '../domain/workout.dart';
 import '../domain/workout_math.dart';
 import 'workout_controller.dart';
@@ -32,16 +35,18 @@ class WorkoutLoggerScreen extends ConsumerWidget {
           _WorkoutHeader(workout: workout),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
               children: [
                 const _ExercisePicker(),
-                const SizedBox(height: 12),
-                for (final exercise in workout.exercises) _LoggedExerciseCard(exercise: exercise),
+                const SizedBox(height: 10),
+                for (final exercise in workout.exercises)
+                  _LoggedExerciseCard(exercise: exercise),
                 if (workout.exercises.isEmpty)
                   ForgeEmptyState(
                     icon: Icons.fitness_center_rounded,
                     title: 'Add your first lift.',
-                    message: 'Pick an exercise and start forging your baseline.',
+                    message:
+                        'Pick an exercise and start forging your baseline.',
                     action: OutlinedButton.icon(
                       onPressed: () => context.go('/exercises'),
                       icon: const Icon(Icons.add_rounded),
@@ -65,28 +70,86 @@ class _WorkoutHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-      decoration: const BoxDecoration(color: IFColors.black2, border: Border(bottom: BorderSide(color: IFColors.borderSoft))),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+      decoration: const BoxDecoration(
+        color: IFColors.black2,
+        border: Border(bottom: BorderSide(color: IFColors.borderSoft)),
+      ),
       child: Column(
         children: [
           Row(
             children: [
-              Expanded(child: _Metric(label: 'Sets', value: '${workout.totalSets}', icon: Icons.check_circle_rounded)),
-              Expanded(child: _Metric(label: 'Volume', value: '${(workout.totalVolume / 1000).toStringAsFixed(1)}t', icon: Icons.scale_rounded)),
-              Expanded(child: _Metric(label: 'Exercises', value: '${workout.exercises.length}', icon: Icons.fitness_center_rounded)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('LIVE WORKOUT', style: IFText.micro),
+                    const SizedBox(height: 3),
+                    Text(
+                      workout.exercises.isEmpty
+                          ? 'Build your session'
+                          : workout.exercises.first.exerciseName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: IFText.h2,
+                    ),
+                  ],
+                ),
+              ),
+              _HeaderIconButton(
+                icon: Icons.more_vert_rounded,
+                onTap: () {},
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                height: 42,
+                child: ElevatedButton.icon(
+                  onPressed: workout.totalSets == 0
+                      ? null
+                      : () async {
+                          await ref
+                              .read(workoutControllerProvider.notifier)
+                              .finishWorkout();
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Workout saved offline.')),
+                          );
+                          context.go('/');
+                        },
+                  icon: const Icon(Icons.flag_rounded, size: 18),
+                  label: const Text('FINISH'),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 12),
-          ElevatedButton.icon(
-            onPressed: workout.totalSets == 0
-                ? null
-                : () async {
-                    await ref.read(workoutControllerProvider.notifier).finishWorkout();
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Workout saved offline.')));
-                  },
-            icon: const Icon(Icons.flag_rounded),
-            label: const Text('FINISH WORKOUT'),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _Metric(
+                  label: 'Sets',
+                  value: '${workout.totalSets}',
+                  icon: Icons.check_circle_rounded,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _Metric(
+                  label: 'Volume',
+                  value: '${(workout.totalVolume / 1000).toStringAsFixed(1)}t',
+                  icon: Icons.scale_rounded,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _Metric(
+                  label: 'Exercises',
+                  value: '${workout.exercises.length}',
+                  icon: Icons.fitness_center_rounded,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -103,43 +166,239 @@ class _Metric extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, size: 16, color: IFColors.red),
-        const SizedBox(width: 6),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label.toUpperCase(), style: IFText.micro),
-            Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-          ],
-        ),
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
+      decoration: BoxDecoration(
+        color: IFColors.panel,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: IFColors.borderSoft),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 15, color: IFColors.red),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label.toUpperCase(), style: IFText.micro),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _ExercisePicker extends ConsumerWidget {
+class _HeaderIconButton extends StatelessWidget {
+  const _HeaderIconButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ForgeCard(
+      padding: EdgeInsets.zero,
+      onTap: onTap,
+      child: SizedBox(
+        width: 42,
+        height: 42,
+        child: Icon(icon, color: IFColors.textMuted, size: 21),
+      ),
+    );
+  }
+}
+
+class _ExercisePicker extends ConsumerStatefulWidget {
   const _ExercisePicker();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final exercises = ref.watch(exercisesProvider).valueOrNull ?? const [];
+  ConsumerState<_ExercisePicker> createState() => _ExercisePickerState();
+}
+
+class _ExercisePickerState extends ConsumerState<_ExercisePicker> {
+  String query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final exercises =
+        ref.watch(exercisesProvider).valueOrNull ?? const <Exercise>[];
 
     return ForgeCard(
-      child: DropdownButtonFormField<String>(
-        decoration: const InputDecoration(prefixIcon: Icon(Icons.search_rounded), labelText: 'Quick add exercise'),
-        items: [
-          for (final exercise in exercises) DropdownMenuItem(value: exercise.id, child: Text(exercise.name)),
+      onTap: () => _showPicker(context, exercises),
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: IFColors.red.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: IFColors.red.withValues(alpha: 0.26)),
+            ),
+            child: const Icon(Icons.search_rounded, color: IFColors.red),
+          ),
+          const SizedBox(width: 11),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('QUICK ADD EXERCISE', style: IFText.micro),
+                SizedBox(height: 3),
+                Text('Search your library', style: IFText.cardTitle),
+              ],
+            ),
+          ),
+          const Icon(Icons.add_rounded, color: IFColors.red),
         ],
-        onChanged: (id) {
-          if (id == null) return;
-          final exercise = exercises.firstWhere((item) => item.id == id);
-          ref.read(workoutControllerProvider.notifier).addExercise(exercise);
-        },
       ),
     );
+  }
+
+  Future<void> _showPicker(
+      BuildContext context, List<Exercise> exercises) async {
+    query = '';
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: IFColors.black,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final visible = exercises.where((exercise) {
+              final search = query.trim().toLowerCase();
+              return search.isEmpty ||
+                  exercise.name.toLowerCase().contains(search) ||
+                  exercise.primaryMuscle.toLowerCase().contains(search) ||
+                  exercise.equipment.toLowerCase().contains(search);
+            }).toList();
+
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  12,
+                  16,
+                  16 + MediaQuery.viewInsetsOf(context).bottom,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: IFColors.border,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const Row(
+                      children: [
+                        Expanded(child: Text('Add Exercise', style: IFText.h2)),
+                        Icon(Icons.fitness_center_rounded, color: IFColors.red),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      autofocus: true,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.search_rounded),
+                        labelText: 'Search exercises',
+                      ),
+                      onChanged: (value) => setSheetState(() => query = value),
+                    ),
+                    const SizedBox(height: 12),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 380),
+                      child: visible.isEmpty
+                          ? const ForgeEmptyState(
+                              compact: true,
+                              icon: Icons.search_rounded,
+                              title: 'No exercises found.',
+                              message:
+                                  'Adjust search or add a custom exercise.',
+                            )
+                          : ListView.separated(
+                              shrinkWrap: true,
+                              itemCount: visible.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 8),
+                              itemBuilder: (context, index) {
+                                final exercise = visible[index];
+                                return ForgeCard(
+                                  padding: const EdgeInsets.all(12),
+                                  onTap: () {
+                                    ref
+                                        .read(
+                                            workoutControllerProvider.notifier)
+                                        .addExercise(exercise);
+                                    Navigator.pop(context);
+                                  },
+                                  child: Row(
+                                    children: [
+                                      Icon(_equipmentIcon(exercise.equipment),
+                                          color: IFColors.red),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(exercise.name,
+                                                style: IFText.cardTitle),
+                                            Text(
+                                              '${exercise.primaryMuscle} • ${exercise.equipment}',
+                                              style: IFText.bodyMuted,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const Icon(Icons.add_rounded,
+                                          color: IFColors.red),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  IconData _equipmentIcon(String equipment) {
+    return switch (equipment) {
+      'Barbell' => Icons.fitness_center_rounded,
+      'Dumbbell' => Icons.sports_gymnastics_rounded,
+      'Machine' => Icons.precision_manufacturing_rounded,
+      'Cable' => Icons.cable_rounded,
+      'Bodyweight' => Icons.accessibility_new_rounded,
+      _ => Icons.fitness_center_rounded,
+    };
   }
 }
 
@@ -149,7 +408,8 @@ class _LoggedExerciseCard extends ConsumerStatefulWidget {
   final LoggedExercise exercise;
 
   @override
-  ConsumerState<_LoggedExerciseCard> createState() => _LoggedExerciseCardState();
+  ConsumerState<_LoggedExerciseCard> createState() =>
+      _LoggedExerciseCardState();
 }
 
 class _LoggedExerciseCardState extends ConsumerState<_LoggedExerciseCard> {
@@ -215,59 +475,123 @@ class _LoggedExerciseCardState extends ConsumerState<_LoggedExerciseCard> {
   @override
   Widget build(BuildContext context) {
     final controller = ref.read(workoutControllerProvider.notifier);
+    final library =
+        ref.watch(exercisesProvider).valueOrNull ?? const <Exercise>[];
+    final meta = _exerciseMeta(library, widget.exercise.exerciseId);
     final plates = plateCalculator.platesPerSide(inputWeightInKg());
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(bottom: 12),
       child: ForgeCard(
         glow: widget.exercise.sets.isNotEmpty,
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Expanded(child: Text(widget.exercise.exerciseName, style: IFText.h2)),
-                IconButton(onPressed: () => context.go('/rest-timer'), icon: const Icon(Icons.timer_outlined, color: IFColors.red)),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(widget.exercise.exerciseName, style: IFText.h2),
+                      const SizedBox(height: 3),
+                      Text(
+                        '${widget.exercise.sets.length} sets • ${(widget.exercise.totalVolume / 1000).toStringAsFixed(1)}t volume',
+                        style: IFText.micro,
+                      ),
+                    ],
+                  ),
+                ),
+                _CompactIconAction(
+                  icon: Icons.calculate_rounded,
+                  onTap: () => context.go('/plate-calculator'),
+                ),
+                const SizedBox(width: 6),
+                _CompactIconAction(
+                  icon: Icons.timer_outlined,
+                  onTap: () => context.go('/rest-timer'),
+                ),
               ],
             ),
-            const Wrap(
+            const SizedBox(height: 10),
+            Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                ForgeChip(label: 'Barbell', icon: Icons.fitness_center_rounded),
-                ForgeChip(label: 'Compound', icon: Icons.bolt_rounded),
+                ForgeChip(
+                  label: meta?.equipment ?? 'Exercise',
+                  icon: _equipmentIcon(meta?.equipment),
+                ),
+                ForgeChip(
+                  label: meta?.primaryMuscle ?? 'Tracked',
+                  icon: Icons.bolt_rounded,
+                ),
+                ForgeChip(
+                  label: widget.exercise.sets.isEmpty ? 'Baseline' : 'Working',
+                  icon: Icons.check_circle_rounded,
+                  color: widget.exercise.sets.isEmpty
+                      ? IFColors.textMuted
+                      : IFColors.red,
+                ),
               ],
             ),
-            const SizedBox(height: 14),
-            if (widget.exercise.sets.isNotEmpty) _SetsTable(exercise: widget.exercise, formatWeight: formatWeight),
-            if (widget.exercise.sets.isEmpty) const Text('No working sets yet.', style: IFText.bodyMuted),
+            const SizedBox(height: 12),
+            if (widget.exercise.sets.isNotEmpty)
+              _SetsTable(exercise: widget.exercise, formatWeight: formatWeight),
+            if (widget.exercise.sets.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: IFColors.panel2,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: IFColors.borderSoft),
+                ),
+                child:
+                    const Text('No working sets yet.', style: IFText.bodyMuted),
+              ),
             const SizedBox(height: 12),
             TextField(
               controller: notesController,
               minLines: 1,
-              maxLines: 3,
-              decoration: const InputDecoration(prefixIcon: Icon(Icons.notes_rounded), labelText: 'Exercise notes'),
-              onChanged: (value) => controller.updateExerciseNotes(widget.exercise.exerciseId, value),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: _SmallInput(label: unit == _WeightUnit.kg ? 'kg' : 'lbs', controller: weightController)),
-                const SizedBox(width: 8),
-                Expanded(child: _SmallInput(label: 'reps', controller: repsController)),
-                const SizedBox(width: 8),
-                Expanded(child: _SmallInput(label: 'RPE', controller: rpeController)),
-              ],
+              maxLines: 2,
+              decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.notes_rounded), labelText: 'Notes'),
+              onChanged: (value) => controller.updateExerciseNotes(
+                  widget.exercise.exerciseId, value),
             ),
             const SizedBox(height: 10),
-            SegmentedButton<_WeightUnit>(
-              segments: const [ButtonSegment(value: _WeightUnit.kg, label: Text('kg')), ButtonSegment(value: _WeightUnit.lbs, label: Text('lbs'))],
-              selected: {unit},
-              onSelectionChanged: (value) => setState(() => unit = value.first),
+            Row(
+              children: [
+                Expanded(
+                    child: _SmallInput(
+                        label: unit == _WeightUnit.kg ? 'kg' : 'lbs',
+                        controller: weightController)),
+                const SizedBox(width: 8),
+                Expanded(
+                    child:
+                        _SmallInput(label: 'reps', controller: repsController)),
+                const SizedBox(width: 8),
+                Expanded(
+                    child:
+                        _SmallInput(label: 'RPE', controller: rpeController)),
+              ],
             ),
-            const SizedBox(height: 12),
-            _PlatePreview(plates: plates, onTap: () => context.go('/plate-calculator')),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: SegmentedButton<_WeightUnit>(
+                segments: const [
+                  ButtonSegment(value: _WeightUnit.kg, label: Text('kg')),
+                  ButtonSegment(value: _WeightUnit.lbs, label: Text('lbs')),
+                ],
+                selected: {unit},
+                onSelectionChanged: (value) =>
+                    setState(() => unit = value.first),
+              ),
+            ),
+            const SizedBox(height: 10),
             _RestTimerCompact(
               seconds: restRemaining,
               total: widget.exercise.restSeconds,
@@ -275,18 +599,39 @@ class _LoggedExerciseCardState extends ConsumerState<_LoggedExerciseCard> {
               onToggle: () => setState(() => restRunning = !restRunning),
               onAdd15: () => setState(() => restRemaining += 15),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
+            _PlatePreview(
+                plates: plates, onTap: () => context.go('/plate-calculator')),
+            const SizedBox(height: 10),
             Row(
               children: [
-                Expanded(child: OutlinedButton.icon(onPressed: () => controller.addSameAsLastSet(widget.exercise.exerciseId), icon: const Icon(Icons.replay_rounded), label: const Text('SAME'))),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () =>
+                        controller.addSameAsLastSet(widget.exercise.exerciseId),
+                    icon: const Icon(Icons.replay_rounded),
+                    label: const Text('SAME'),
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: OutlinedButton.icon(onPressed: () => controller.addSmartSet(widget.exercise.exerciseId), icon: const Icon(Icons.auto_awesome_rounded), label: const Text('SMART +'))),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () =>
+                        controller.addSmartSet(widget.exercise.exerciseId),
+                    icon: const Icon(Icons.auto_awesome_rounded),
+                    label: const Text('SMART +'),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 8),
-            ElevatedButton.icon(
+            ForgePrimaryButton(
               onPressed: () async {
-                final set = LoggedSet(weight: inputWeightInKg(), reps: int.tryParse(repsController.text) ?? 0, rpe: double.tryParse(rpeController.text));
+                final set = LoggedSet(
+                  weight: inputWeightInKg(),
+                  reps: int.tryParse(repsController.text) ?? 0,
+                  rpe: double.tryParse(rpeController.text),
+                );
                 final isPr = controller.isPr(widget.exercise.exerciseId, set);
                 controller.addSet(widget.exercise.exerciseId, set);
                 HapticFeedback.mediumImpact();
@@ -296,11 +641,55 @@ class _LoggedExerciseCardState extends ConsumerState<_LoggedExerciseCard> {
                   await showPrCelebration(context);
                 }
               },
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('LOG SET'),
+              icon: Icons.add_rounded,
+              label: 'LOG SET',
+              height: 48,
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  IconData _equipmentIcon(String? equipment) {
+    return switch (equipment) {
+      'Barbell' => Icons.fitness_center_rounded,
+      'Dumbbell' => Icons.sports_gymnastics_rounded,
+      'Machine' => Icons.precision_manufacturing_rounded,
+      'Cable' => Icons.cable_rounded,
+      'Bodyweight' => Icons.accessibility_new_rounded,
+      _ => Icons.fitness_center_rounded,
+    };
+  }
+
+  Exercise? _exerciseMeta(List<Exercise> exercises, String id) {
+    for (final exercise in exercises) {
+      if (exercise.id == id) return exercise;
+    }
+    return null;
+  }
+}
+
+class _CompactIconAction extends StatelessWidget {
+  const _CompactIconAction({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: IFColors.panel2,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: IFColors.border),
+        ),
+        child: Icon(icon, color: IFColors.red, size: 19),
       ),
     );
   }
@@ -319,7 +708,7 @@ class _SetsTable extends ConsumerWidget {
         const Row(
           children: [
             SizedBox(width: 36, child: Text('SET', style: IFText.micro)),
-            Expanded(child: Text('LOAD', style: IFText.micro)),
+            Expanded(child: Text('KG', style: IFText.micro)),
             SizedBox(width: 48, child: Text('REPS', style: IFText.micro)),
             SizedBox(width: 48, child: Text('RPE', style: IFText.micro)),
             SizedBox(width: 44),
@@ -327,7 +716,11 @@ class _SetsTable extends ConsumerWidget {
         ),
         const SizedBox(height: 6),
         for (var i = 0; i < exercise.sets.length; i++)
-          _SetRow(index: i + 1, set: exercise.sets[i], exerciseId: exercise.exerciseId, formatWeight: formatWeight),
+          _SetRow(
+              index: i + 1,
+              set: exercise.sets[i],
+              exerciseId: exercise.exerciseId,
+              formatWeight: formatWeight),
       ],
     );
   }
@@ -341,12 +734,23 @@ class _SmallInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(controller: controller, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: label));
+    return TextField(
+      controller: controller,
+      keyboardType: TextInputType.number,
+      textAlign: TextAlign.center,
+      style: const TextStyle(fontWeight: FontWeight.w900),
+      decoration: InputDecoration(labelText: label),
+    );
   }
 }
 
 class _RestTimerCompact extends StatelessWidget {
-  const _RestTimerCompact({required this.seconds, required this.total, required this.running, required this.onToggle, required this.onAdd15});
+  const _RestTimerCompact(
+      {required this.seconds,
+      required this.total,
+      required this.running,
+      required this.onToggle,
+      required this.onAdd15});
 
   final int seconds;
   final int total;
@@ -356,21 +760,40 @@ class _RestTimerCompact extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = seconds == 0 ? '${total}s' : '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
+    final label = seconds == 0
+        ? '${total}s'
+        : '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
     final progress = seconds == 0 ? 0.0 : (seconds / total).clamp(0.0, 1.0);
     return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: IFColors.panel2, borderRadius: BorderRadius.circular(12), border: Border.all(color: IFColors.border)),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: IFColors.panel2,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: IFColors.border),
+      ),
       child: Row(
         children: [
-          SizedBox(
-            width: 46,
-            height: 46,
-            child: CircularProgressIndicator(value: progress, color: IFColors.red, backgroundColor: IFColors.panel3, strokeWidth: 5),
+          ForgeProgressRing(
+            value: progress,
+            size: 46,
+            strokeWidth: 5,
+            center:
+                const Icon(Icons.timer_outlined, color: IFColors.red, size: 18),
           ),
           const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('REST TIMER', style: IFText.micro), Text(label, style: IFText.h2)])),
-          IconButton(onPressed: onToggle, icon: Icon(running ? Icons.pause_rounded : Icons.play_arrow_rounded)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('REST TIMER', style: IFText.micro),
+                Text(label, style: IFText.h2),
+              ],
+            ),
+          ),
+          IconButton(
+              onPressed: onToggle,
+              icon: Icon(
+                  running ? Icons.pause_rounded : Icons.play_arrow_rounded)),
           TextButton(onPressed: onAdd15, child: const Text('+15s')),
         ],
       ),
@@ -390,13 +813,22 @@ class _PlatePreview extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: IFColors.panel2, borderRadius: BorderRadius.circular(12), border: Border.all(color: IFColors.border)),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: IFColors.panel2,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: IFColors.border),
+        ),
         child: Row(
           children: [
             const Icon(Icons.calculate_rounded, color: IFColors.red),
             const SizedBox(width: 10),
-            Expanded(child: Text('Plates/side: ${plates.isEmpty ? 'bar only' : plates.map((p) => p.g).join(' + ')}', style: IFText.bodyMuted)),
+            Expanded(
+              child: Text(
+                'Plates/side: ${plates.isEmpty ? 'bar only' : plates.map((p) => p.g).join(' + ')}',
+                style: IFText.bodyMuted,
+              ),
+            ),
             const Icon(Icons.chevron_right_rounded),
           ],
         ),
@@ -406,7 +838,11 @@ class _PlatePreview extends StatelessWidget {
 }
 
 class _SetRow extends ConsumerWidget {
-  const _SetRow({required this.index, required this.set, required this.exerciseId, required this.formatWeight});
+  const _SetRow(
+      {required this.index,
+      required this.set,
+      required this.exerciseId,
+      required this.formatWeight});
 
   final int index;
   final LoggedSet set;
@@ -415,10 +851,11 @@ class _SetRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isPr = ref.read(workoutControllerProvider.notifier).isPr(exerciseId, set);
+    final isPr =
+        ref.read(workoutControllerProvider.notifier).isPr(exerciseId, set);
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      margin: const EdgeInsets.only(bottom: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: IFColors.panel2,
         borderRadius: BorderRadius.circular(10),
@@ -426,18 +863,32 @@ class _SetRow extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          SizedBox(width: 36, child: Text('$index', style: const TextStyle(color: IFColors.textMuted, fontWeight: FontWeight.w800))),
-          Expanded(child: Text(formatWeight(set.weight), style: const TextStyle(fontWeight: FontWeight.w900))),
+          SizedBox(
+            width: 36,
+            child: Text('$index',
+                style: const TextStyle(
+                    color: IFColors.textMuted, fontWeight: FontWeight.w800)),
+          ),
+          Expanded(
+              child: Text(formatWeight(set.weight),
+                  style: const TextStyle(fontWeight: FontWeight.w900))),
           SizedBox(width: 48, child: Text('${set.reps}')),
           SizedBox(width: 48, child: Text(set.rpe?.toStringAsFixed(1) ?? '-')),
-          if (isPr) const Icon(Icons.emoji_events_rounded, color: IFColors.gold, size: 18),
+          if (isPr)
+            const Icon(Icons.emoji_events_rounded,
+                color: IFColors.gold, size: 18)
+          else
+            const Icon(Icons.check_circle_rounded,
+                color: IFColors.red, size: 18),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert_rounded),
             onSelected: (action) {
               if (action == 'edit') {
                 _showEditSetDialog(context, ref);
               } else if (action == 'delete') {
-                ref.read(workoutControllerProvider.notifier).deleteSet(exerciseId, index - 1);
+                ref
+                    .read(workoutControllerProvider.notifier)
+                    .deleteSet(exerciseId, index - 1);
               }
             },
             itemBuilder: (context) => const [
@@ -462,14 +913,29 @@ class _SetRow extends ConsumerWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: weightController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'kg')),
-            TextField(controller: repsController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'reps')),
-            TextField(controller: rpeController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'RPE')),
-            TextField(controller: notesController, minLines: 1, maxLines: 2, decoration: const InputDecoration(labelText: 'Set notes')),
+            TextField(
+                controller: weightController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'kg')),
+            TextField(
+                controller: repsController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'reps')),
+            TextField(
+                controller: rpeController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'RPE')),
+            TextField(
+                controller: notesController,
+                minLines: 1,
+                maxLines: 2,
+                decoration: const InputDecoration(labelText: 'Set notes')),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () => Navigator.pop(
               context,
@@ -477,7 +943,9 @@ class _SetRow extends ConsumerWidget {
                 weight: double.tryParse(weightController.text) ?? set.weight,
                 reps: int.tryParse(repsController.text) ?? set.reps,
                 rpe: double.tryParse(rpeController.text),
-                notes: notesController.text.trim().isEmpty ? null : notesController.text.trim(),
+                notes: notesController.text.trim().isEmpty
+                    ? null
+                    : notesController.text.trim(),
                 type: set.type,
                 completedAt: set.completedAt,
               ),
@@ -491,7 +959,11 @@ class _SetRow extends ConsumerWidget {
     repsController.dispose();
     rpeController.dispose();
     notesController.dispose();
-    if (updated != null) ref.read(workoutControllerProvider.notifier).updateSet(exerciseId, index - 1, updated);
+    if (updated != null) {
+      ref
+          .read(workoutControllerProvider.notifier)
+          .updateSet(exerciseId, index - 1, updated);
+    }
   }
 }
 
