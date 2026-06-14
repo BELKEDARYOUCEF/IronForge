@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/app_theme.dart';
+import '../../../core/if_spacing.dart';
 import '../../../core/if_text_styles.dart';
 import '../../../shared/widgets/forge_card.dart';
 import '../../../shared/widgets/forge_chip.dart';
@@ -40,26 +41,30 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
         children: [
           if (history.isLoading)
             const LinearProgressIndicator(color: IFColors.red),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final item in const ['7D', '4W', '3M', '1Y', 'ALL'])
-                ForgeChip(
-                  label: item,
-                  selected: range == item,
-                  onTap: () => setState(() => range = item),
-                ),
-            ],
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final item in const ['7D', '4W', '3M', '1Y', 'ALL'])
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ForgeChip(
+                      label: item,
+                      selected: range == item,
+                      onTap: () => setState(() => range = item),
+                    ),
+                  ),
+              ],
+            ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: IFSpacing.spacingBlock),
           _MainStrengthCard(bestBench: bestBench, delta: benchDelta),
-          const SizedBox(height: 14),
+          const SizedBox(height: IFSpacing.spacingBlock),
           const ForgeSectionHeader(
               title: 'Strength Curve', subtitle: 'Volume by session'),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           _StrengthChart(sessions: stats.chronologicalSessions),
-          const SizedBox(height: 14),
+          const SizedBox(height: IFSpacing.spacingBlock),
           if (sessions.isEmpty)
             const ForgeEmptyState(
               compact: true,
@@ -72,8 +77,8 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
               crossAxisCount: 2,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
+              mainAxisSpacing: IFSpacing.spacingBlock,
+              crossAxisSpacing: IFSpacing.spacingBlock,
               childAspectRatio: 1.4,
               children: [
                 ForgeMetricTile(
@@ -139,21 +144,18 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
 
   double? _benchDelta(List<WorkoutSession> sessions) {
     final now = DateTime.now();
-    final currentSince = DateTime(now.year, now.month - 1, now.day);
-    final previousSince = DateTime(now.year, now.month - 2, now.day);
+    final currentSince = now.subtract(const Duration(days: 30));
+    final previousSince = now.subtract(const Duration(days: 60));
     final current = ProgressStats(sessions
-            .where((session) => session.startedAt.isAfter(currentSince))
+            .where((s) => s.startedAt.isAfter(currentSince))
             .toList())
         .bestE1rmFor('bench_press');
-    final previous = ProgressStats(
-      sessions
-          .where(
-            (session) =>
-                session.startedAt.isAfter(previousSince) &&
-                session.startedAt.isBefore(currentSince),
-          )
-          .toList(),
-    ).bestE1rmFor('bench_press');
+    final previous = ProgressStats(sessions
+            .where((s) =>
+                s.startedAt.isAfter(previousSince) &&
+                s.startedAt.isBefore(currentSince))
+            .toList())
+        .bestE1rmFor('bench_press');
     if (current == 0 || previous == 0) return null;
     return current - previous;
   }
@@ -168,10 +170,16 @@ class _MainStrengthCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasBench = bestBench > 0;
+    final deltaPositive = delta != null && delta! >= 0;
+    final deltaColor =
+        delta == null ? IFColors.textMuted : (deltaPositive ? IFColors.green : IFColors.orange);
+    final deltaText = delta == null
+        ? 'Log bench sets to calculate progress.'
+        : '${deltaPositive ? '+' : ''}${delta!.toStringAsFixed(1)} kg from last 30 days';
 
     return ForgeCard(
       glow: hasBench,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(IFSpacing.paddingCard),
       child: Row(
         children: [
           Expanded(
@@ -179,40 +187,38 @@ class _MainStrengthCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('BENCH PRESS', style: IFText.micro),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 const Text('1RM Estimate', style: IFText.bodyMuted),
                 const SizedBox(height: 4),
                 Text(
-                  hasBench ? '${bestBench.toStringAsFixed(1)} kg' : '-',
+                  hasBench ? '${bestBench.toStringAsFixed(1)} kg' : '—',
                   style: const TextStyle(
                     fontSize: 42,
                     fontWeight: FontWeight.w900,
                     color: IFColors.red,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
-                  delta == null
-                      ? 'Log bench sets to calculate progress.'
-                      : '${delta! >= 0 ? '+' : ''}${delta!.toStringAsFixed(1)} kg from last month',
+                  deltaText,
                   style: TextStyle(
-                    color: delta == null ? IFColors.textMuted : IFColors.green,
+                    color: deltaColor,
                     fontWeight: FontWeight.w800,
+                    fontSize: 13,
                   ),
                 ),
               ],
             ),
           ),
           Container(
-            width: 58,
-            height: 58,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
               color: IFColors.red.withValues(alpha: 0.12),
               shape: BoxShape.circle,
               border: Border.all(color: IFColors.red.withValues(alpha: 0.3)),
             ),
-            child:
-                const Icon(Icons.fitness_center_rounded, color: IFColors.red),
+            child: const Icon(Icons.fitness_center_rounded, color: IFColors.red),
           ),
         ],
       ),
@@ -232,10 +238,13 @@ class _StrengthChart extends StatelessWidget {
         FlSpot(i.toDouble(), sessions[i].totalVolume / 1000),
     ];
 
+    // Show bottom labels only when there are few sessions to avoid crowding.
+    final showBottomLabels = sessions.length <= 10;
+
     return ForgeCard(
       padding: const EdgeInsets.fromLTRB(12, 16, 16, 12),
       child: SizedBox(
-        height: 220,
+        height: 200,
         child: spots.isEmpty
             ? const Center(
                 child: Text('Save workouts to build your strength curve.',
@@ -258,7 +267,7 @@ class _StrengthChart extends StatelessWidget {
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        reservedSize: 42,
+                        reservedSize: 40,
                         getTitlesWidget: (value, meta) => Text(
                           '${value.toStringAsFixed(0)}t',
                           style: const TextStyle(
@@ -268,18 +277,19 @@ class _StrengthChart extends StatelessWidget {
                     ),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 28,
+                        showTitles: showBottomLabels,
+                        reservedSize: 26,
                         interval: 1,
                         getTitlesWidget: (value, meta) {
                           final index = value.toInt();
                           if (index < 0 || index >= sessions.length) {
                             return const SizedBox.shrink();
                           }
+                          final d = sessions[index].startedAt;
                           return Text(
-                            '${sessions[index].startedAt.month}/${sessions[index].startedAt.day}',
+                            '${d.month}/${d.day}',
                             style: const TextStyle(
-                                color: IFColors.textFaint, fontSize: 11),
+                                color: IFColors.textFaint, fontSize: 10),
                           );
                         },
                       ),
@@ -289,7 +299,7 @@ class _StrengthChart extends StatelessWidget {
                     LineChartBarData(
                       spots: spots,
                       color: IFColors.red,
-                      barWidth: 3,
+                      barWidth: 2.5,
                       isCurved: true,
                       dotData: FlDotData(
                         show: true,
@@ -302,7 +312,7 @@ class _StrengthChart extends StatelessWidget {
                       ),
                       belowBarData: BarAreaData(
                           show: true,
-                          color: IFColors.red.withValues(alpha: 0.16)),
+                          color: IFColors.red.withValues(alpha: 0.14)),
                     ),
                   ],
                 ),
