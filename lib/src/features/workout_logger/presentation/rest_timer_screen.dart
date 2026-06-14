@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/app_theme.dart';
+import '../../../core/if_spacing.dart';
 import '../../../core/if_text_styles.dart';
 import '../../../shared/widgets/forge_card.dart';
 import '../../../shared/widgets/forge_progress_ring.dart';
@@ -68,8 +69,8 @@ class _RestTimerScreenState extends State<RestTimerScreen> {
             child: Column(
               children: [
                 ForgeProgressRing(
-                  size: 260,
-                  strokeWidth: 15,
+                  size: 280,
+                  strokeWidth: 14,
                   value: percent,
                   backgroundColor: IFColors.panel3,
                   color: IFColors.red,
@@ -77,23 +78,25 @@ class _RestTimerScreenState extends State<RestTimerScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text('RESTING', style: IFText.micro),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Text(
                         label,
                         style: const TextStyle(
-                          fontSize: 52,
+                          fontSize: 56,
                           fontWeight: FontWeight.w900,
+                          letterSpacing: -1,
                           color: IFColors.text,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      const Text('UP NEXT', style: IFText.micro),
-                      const Text('Bench Press', style: IFText.h3),
-                      const Text('Set 3 of 4', style: IFText.bodyMuted),
+                      const SizedBox(height: 6),
+                      Text(
+                        running ? 'counting down' : 'paused',
+                        style: IFText.bodyMuted,
+                      ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: IFSpacing.spacingBlock),
                 Row(
                   children: [
                     Expanded(
@@ -104,7 +107,7 @@ class _RestTimerScreenState extends State<RestTimerScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: IFSpacing.spacingBlock),
                     Expanded(
                       child: _TimerControlButton(
                         label: running ? 'PAUSE' : 'START',
@@ -115,7 +118,7 @@ class _RestTimerScreenState extends State<RestTimerScreen> {
                         onTap: () => setState(() => running = !running),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: IFSpacing.spacingBlock),
                     Expanded(
                       child: _TimerControlButton(
                         label: '+15s',
@@ -127,9 +130,9 @@ class _RestTimerScreenState extends State<RestTimerScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: IFSpacing.spacingBlock),
           ForgeCard(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(IFSpacing.paddingCard),
             child: Column(
               children: [
                 _TimerSettingRow(
@@ -139,7 +142,7 @@ class _RestTimerScreenState extends State<RestTimerScreen> {
                   active: vibration,
                   onTap: () => setState(() => vibration = !vibration),
                 ),
-                const Divider(height: 18),
+                const Divider(height: 16),
                 _SoundSettingRow(
                   sound: sound,
                   onChanged: (value) => setState(() => sound = value),
@@ -147,9 +150,9 @@ class _RestTimerScreenState extends State<RestTimerScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: IFSpacing.spacingBlock),
           ForgeCard(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(IFSpacing.paddingCard),
             child: Row(
               children: [
                 Container(
