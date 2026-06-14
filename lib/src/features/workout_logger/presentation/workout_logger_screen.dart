@@ -418,6 +418,7 @@ class _LoggedExerciseCardState extends ConsumerState<_LoggedExerciseCard> {
   final rpeController = TextEditingController(text: '8');
   late final TextEditingController notesController;
   final plateCalculator = const PlateCalculator();
+  final _overload = const ProgressiveOverloadEngine();
   _WeightUnit unit = _WeightUnit.kg;
   Timer? restTimer;
   int restRemaining = 0;
@@ -603,47 +604,67 @@ class _LoggedExerciseCardState extends ConsumerState<_LoggedExerciseCard> {
             _PlatePreview(
                 plates: plates, onTap: () => context.go('/plate-calculator')),
             const SizedBox(height: 10),
+            // ── Overload hint (Hive last set) ───────────────────────
+            Builder(builder: (context) {
+              final lastSet = controller
+                  .lastKnownSet(widget.exercise.exerciseId);
+              if (lastSet == null) return const SizedBox.shrink();
+              final suggested = _overload.suggestNextSet(lastSet);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _OverloadHint(
+                  lastSet: lastSet,
+                  suggested: suggested,
+                  formatWeight: formatWeight,
+                ),
+              );
+            }),
+            // ── Compact action bar: SAME | SMART+ | LOG SET ─────────
             Row(
               children: [
                 Expanded(
                   child: _QuickSetButton(
                     label: 'SAME',
                     icon: Icons.replay_rounded,
-                    onPressed: () =>
-                        controller.addSameAsLastSet(widget.exercise.exerciseId),
+                    onPressed: () => controller
+                        .addSameAsLastSet(widget.exercise.exerciseId),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Expanded(
                   child: _QuickSetButton(
-                    label: 'SMART +',
+                    label: 'SMART+',
                     icon: Icons.auto_awesome_rounded,
                     onPressed: () =>
                         controller.addSmartSet(widget.exercise.exerciseId),
                   ),
                 ),
+                const SizedBox(width: 6),
+                Expanded(
+                  flex: 2,
+                  child: ForgePrimaryButton(
+                    onPressed: () async {
+                      final set = LoggedSet(
+                        weight: inputWeightInKg(),
+                        reps: int.tryParse(repsController.text) ?? 0,
+                        rpe: double.tryParse(rpeController.text),
+                      );
+                      final isPr = controller
+                          .isPr(widget.exercise.exerciseId, set);
+                      controller.addSet(widget.exercise.exerciseId, set);
+                      HapticFeedback.mediumImpact();
+                      SystemSound.play(SystemSoundType.click);
+                      startRestTimer();
+                      if (isPr && context.mounted) {
+                        await showPrCelebration(context);
+                      }
+                    },
+                    icon: Icons.add_rounded,
+                    label: 'LOG SET',
+                    height: 44,
+                  ),
+                ),
               ],
-            ),
-            const SizedBox(height: 8),
-            ForgePrimaryButton(
-              onPressed: () async {
-                final set = LoggedSet(
-                  weight: inputWeightInKg(),
-                  reps: int.tryParse(repsController.text) ?? 0,
-                  rpe: double.tryParse(rpeController.text),
-                );
-                final isPr = controller.isPr(widget.exercise.exerciseId, set);
-                controller.addSet(widget.exercise.exerciseId, set);
-                HapticFeedback.mediumImpact();
-                SystemSound.play(SystemSoundType.click);
-                startRestTimer();
-                if (isPr && context.mounted) {
-                  await showPrCelebration(context);
-                }
-              },
-              icon: Icons.add_rounded,
-              label: 'LOG SET',
-              height: 48,
             ),
           ],
         ),
@@ -1092,6 +1113,58 @@ class _SetRow extends ConsumerWidget {
           .read(workoutControllerProvider.notifier)
           .updateSet(exerciseId, index - 1, updated);
     }
+  }
+}
+
+class _OverloadHint extends StatelessWidget {
+  const _OverloadHint({
+    required this.lastSet,
+    required this.suggested,
+    required this.formatWeight,
+  });
+
+  final LoggedSet lastSet;
+  final LoggedSet suggested;
+  final String Function(double kg) formatWeight;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: IFColors.panel2,
+        borderRadius: BorderRadius.circular(10),
+        border:
+            Border.all(color: IFColors.border, width: IFSpacing.borderWidth),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.history_rounded,
+              size: 13, color: IFColors.textMuted),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              'Last: ${formatWeight(lastSet.weight)} × ${lastSet.reps} reps',
+              style: IFText.micro,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(Icons.arrow_forward_rounded,
+              size: 11, color: IFColors.green),
+          const SizedBox(width: 4),
+          Text(
+            'try ${formatWeight(suggested.weight)}',
+            style: const TextStyle(
+              color: IFColors.green,
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

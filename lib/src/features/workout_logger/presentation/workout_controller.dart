@@ -129,6 +129,9 @@ class WorkoutController extends StateNotifier<WorkoutSession> {
     state = WorkoutSession(id: const Uuid().v4(), startedAt: DateTime.now());
   }
 
+  /// Last logged set for [exerciseId] from Hive history, or null.
+  LoggedSet? lastKnownSet(String exerciseId) => _lastKnownSet(exerciseId);
+
   bool isPr(String exerciseId, LoggedSet set) {
     final history = _history
         .expand((workout) => workout.exercises)
