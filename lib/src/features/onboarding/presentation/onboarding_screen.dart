@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/if_text_styles.dart';
 import '../../../shared/widgets/forge_card.dart';
 import '../../../shared/widgets/forge_chip.dart';
+import '../../../shared/widgets/forge_primary_button.dart';
 import '../../../shared/widgets/forge_section_header.dart';
 import '../../../shared/widgets/forge_shell.dart';
 import '../data/user_profile_repository.dart';
@@ -29,27 +30,57 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     return ForgeShell(
       title: 'Setup',
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
         children: [
           const Text('Forge your setup', style: IFText.hero),
           const SizedBox(height: 8),
-          const Text('Choose the baseline. You can edit it anytime.', style: IFText.bodyMuted),
+          const Text('Choose the baseline. You can edit it anytime.',
+              style: IFText.bodyMuted),
           const SizedBox(height: 20),
-          _ChoiceGroup(label: 'Goal', value: goal, values: const ['Strength', 'Hypertrophy', 'Powerbuilding', 'Fat Loss'], onChanged: (value) => setState(() => goal = value)),
-          _ChoiceGroup(label: 'Level', value: level, values: const ['Beginner', 'Intermediate', 'Advanced'], onChanged: (value) => setState(() => level = value)),
-          _ChoiceGroup(label: 'Units', value: units, values: const ['kg', 'lbs'], onChanged: (value) => setState(() => units = value)),
-          _FrequencyPicker(value: frequency, onChanged: (value) => setState(() => frequency = value)),
-          _ChoiceGroup(label: 'Training type', value: trainingType, values: const ['PPL', 'Upper/Lower', 'Full Body', 'Bro Split'], onChanged: (value) => setState(() => trainingType = value)),
+          _ChoiceGroup(
+              label: 'Goal',
+              value: goal,
+              values: const [
+                'Strength',
+                'Hypertrophy',
+                'Powerbuilding',
+                'Fat Loss'
+              ],
+              onChanged: (value) => setState(() => goal = value)),
+          _ChoiceGroup(
+              label: 'Level',
+              value: level,
+              values: const ['Beginner', 'Intermediate', 'Advanced'],
+              onChanged: (value) => setState(() => level = value)),
+          _ChoiceGroup(
+              label: 'Units',
+              value: units,
+              values: const ['kg', 'lbs'],
+              onChanged: (value) => setState(() => units = value)),
+          _FrequencyPicker(
+              value: frequency,
+              onChanged: (value) => setState(() => frequency = value)),
+          _ChoiceGroup(
+              label: 'Training type',
+              value: trainingType,
+              values: const ['PPL', 'Upper/Lower', 'Full Body', 'Bro Split'],
+              onChanged: (value) => setState(() => trainingType = value)),
           const SizedBox(height: 20),
-          ElevatedButton(
+          ForgePrimaryButton(
+            label: 'FINISH SETUP',
+            icon: Icons.check_rounded,
             onPressed: () async {
               await ref.read(userProfileRepositoryProvider).saveProfile(
-                    UserProfile(goal: goal, level: level, units: units, frequencyPerWeek: frequency, trainingType: trainingType),
+                    UserProfile(
+                        goal: goal,
+                        level: level,
+                        units: units,
+                        frequencyPerWeek: frequency,
+                        trainingType: trainingType),
                   );
               ref.invalidate(userProfileProvider);
               if (context.mounted) context.go('/');
             },
-            child: const Text('FINISH SETUP'),
           ),
         ],
       ),
@@ -58,7 +89,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 }
 
 class _ChoiceGroup extends StatelessWidget {
-  const _ChoiceGroup({required this.label, required this.value, required this.values, required this.onChanged});
+  const _ChoiceGroup(
+      {required this.label,
+      required this.value,
+      required this.values,
+      required this.onChanged});
 
   final String label;
   final String value;
@@ -78,7 +113,11 @@ class _ChoiceGroup extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              for (final item in values) ForgeChip(label: item, selected: value == item, onTap: () => onChanged(item)),
+              for (final item in values)
+                ForgeChip(
+                    label: item,
+                    selected: value == item,
+                    onTap: () => onChanged(item)),
             ],
           ),
         ],
@@ -100,10 +139,15 @@ class _FrequencyPicker extends StatelessWidget {
       child: ForgeCard(
         child: Row(
           children: [
-            const Expanded(child: Text('Training days per week', style: IFText.cardTitle)),
-            IconButton(onPressed: () => onChanged((value - 1).clamp(3, 6)), icon: const Icon(Icons.remove_rounded)),
+            const Expanded(
+                child: Text('Training days per week', style: IFText.cardTitle)),
+            IconButton(
+                onPressed: () => onChanged((value - 1).clamp(3, 6)),
+                icon: const Icon(Icons.remove_rounded)),
             Text('$value', style: IFText.h2),
-            IconButton(onPressed: () => onChanged((value + 1).clamp(3, 6)), icon: const Icon(Icons.add_rounded)),
+            IconButton(
+                onPressed: () => onChanged((value + 1).clamp(3, 6)),
+                icon: const Icon(Icons.add_rounded)),
           ],
         ),
       ),

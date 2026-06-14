@@ -906,53 +906,96 @@ class _SetRow extends ConsumerWidget {
     final repsController = TextEditingController(text: '${set.reps}');
     final rpeController = TextEditingController(text: set.rpe?.g ?? '');
     final notesController = TextEditingController(text: set.notes ?? '');
-    final updated = await showDialog<LoggedSet>(
+    final updated = await showModalBottomSheet<LoggedSet>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Edit set $index'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-                controller: weightController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'kg')),
-            TextField(
-                controller: repsController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'reps')),
-            TextField(
-                controller: rpeController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'RPE')),
-            TextField(
+      isScrollControlled: true,
+      backgroundColor: IFColors.black,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            12,
+            16,
+            16 + MediaQuery.viewInsetsOf(context).bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: IFColors.border,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(child: Text('Edit set $index', style: IFText.h2)),
+                  const Icon(Icons.edit_rounded, color: IFColors.red),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                      child: _SmallInput(
+                          label: 'kg', controller: weightController)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                      child: _SmallInput(
+                          label: 'reps', controller: repsController)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                      child:
+                          _SmallInput(label: 'RPE', controller: rpeController)),
+                ],
+              ),
+              const SizedBox(height: 10),
+              TextField(
                 controller: notesController,
                 minLines: 1,
                 maxLines: 2,
-                decoration: const InputDecoration(labelText: 'Set notes')),
-          ],
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(
-              context,
-              LoggedSet(
-                weight: double.tryParse(weightController.text) ?? set.weight,
-                reps: int.tryParse(repsController.text) ?? set.reps,
-                rpe: double.tryParse(rpeController.text),
-                notes: notesController.text.trim().isEmpty
-                    ? null
-                    : notesController.text.trim(),
-                type: set.type,
-                completedAt: set.completedAt,
+                decoration: const InputDecoration(labelText: 'Set notes'),
               ),
-            ),
-            child: const Text('Save'),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                      child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('CANCEL'))),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ForgePrimaryButton(
+                      label: 'SAVE',
+                      icon: Icons.check_rounded,
+                      height: 46,
+                      onPressed: () => Navigator.pop(
+                        context,
+                        LoggedSet(
+                          weight: double.tryParse(weightController.text) ??
+                              set.weight,
+                          reps: int.tryParse(repsController.text) ?? set.reps,
+                          rpe: double.tryParse(rpeController.text),
+                          notes: notesController.text.trim().isEmpty
+                              ? null
+                              : notesController.text.trim(),
+                          type: set.type,
+                          completedAt: set.completedAt,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
     weightController.dispose();

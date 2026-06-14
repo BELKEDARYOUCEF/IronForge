@@ -1,10 +1,10 @@
 # IronForge
 
-IronForge is a premium, offline-first workout tracker for serious lifters. The first build focuses on fast workout logging, previous-session autofill, PR detection, progress stats, and a scalable architecture for Firebase, RevenueCat, AI insights, and wearables.
+IronForge is a premium, offline-first workout tracker for serious lifters. The current build focuses on fast workout logging, previous-session autofill, PR detection, progress stats, editable routines, custom exercises, and a red/black IronForge UI.
 
 ## Current Status
 
-This repository is a hand-built Flutter scaffold because Flutter is not installed on this machine. It includes the main app structure, screens, domain models, sample data, workout logger logic, progress calculations, and setup notes.
+This repository contains a functional Flutter app with local Hive persistence, Riverpod providers, GoRouter navigation, premium shared UI components, and tests for the core offline workflows.
 
 ## Setup
 
@@ -47,23 +47,25 @@ lib/
 ## Implemented First
 
 - Dark premium UI theme.
-- Home dashboard.
-- Workout logger screen.
+- Red/black IronForge design system.
+- Premium home dashboard.
+- Dense workout logger screen.
 - Exercise cards and set rows.
 - Same-as-last-time and smart next-set suggestions.
 - PR detection.
-- Plate calculator utility.
-- Progress dashboard with weekly stats and exercise trend cards.
-- Exercise library screen.
-- Routine and premium placeholder screens.
+- Rest timer and plate calculator utilities.
+- Progress dashboard with period tabs and red chart.
+- Exercise library with search, filters, favorites, and custom exercises.
+- Programs screen with editable local routines.
+- AI Coach and Pro screens as premium coming-soon surfaces.
 
 ## Next Engineering Steps
 
-- Add Isar or Hive persistence.
-- Add Firebase Auth, Firestore, Storage, and sync queue.
-- Add RevenueCat entitlement checks.
+- Produce final Play Store screenshots.
+- Add release signing files locally.
+- Prepare privacy policy and store listing review.
+- Add Firebase Auth, Firestore, Storage, and sync queue when cloud sync is designed.
+- Add RevenueCat entitlement checks when premium features are finalized.
 - Add voice input parser.
-- Add real charts with `fl_chart`.
 - Add camera/progress photo flow.
 - Add background rest timer notifications and haptics.
-

@@ -103,7 +103,7 @@ Travail effectue :
 
 Etat :
 
-- Le placeholder `fl_chart line chart goes here` est remplace par un vrai `LineChart`.
+- L'ancien emplacement de graphique est remplace par un vrai `LineChart`.
 - Le graphique depend des donnees locales Hive via `workoutHistoryProvider`.
 
 ### Etape 7 - Routines modifiables
@@ -277,8 +277,8 @@ Travail effectue :
 - Redesign Exercises avec search, filtres, favoris et custom exercises conserves.
 - Redesign Routines en `Programs`, avec `My Programs` et `Explore`.
 - Redesign Onboarding.
-- Redesign Premium en placeholder `Coming soon`, sans achat reel.
-- Ajout des dossiers assets placeholders.
+- Redesign Premium en surface `Coming soon`, sans achat reel.
+- Ajout des dossiers assets vides necessaires au branding et aux futures images.
 - Ajout de la dependance `percent_indicator`.
 
 Validation :
@@ -366,6 +366,32 @@ Travail effectue :
 Verification :
 
 ```text
+flutter analyze
+No issues found
+
+flutter test
+8 tests passed
+
+flutter build apk --debug
+build/app/outputs/flutter-apk/app-debug.apk
+```
+
+## 14 juin 2026 - Final polish preview IronForge
+
+Travail effectue :
+
+- Passe de polish finale sur les surfaces restantes : Onboarding, Premium, PR celebration et edition de set.
+- Remplacement des derniers composants visuellement generiques par des cards, bottom sheets et boutons du design system IronForge.
+- Verification des textes non professionnels visibles dans l'app.
+- Mise a jour du README pour refleter l'etat reel : app Flutter offline-first avec Hive, routines, exercices custom, progress chart et UI rouge/noir.
+- Conservation de la logique Hive, repositories, providers, routes et package `com.ironforge.app`.
+
+Validation :
+
+```text
+flutter pub get
+OK
+
 flutter analyze
 No issues found
 
