@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_theme.dart';
+import '../../core/if_spacing.dart';
 
 class ForgeCard extends StatelessWidget {
   const ForgeCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(14),
+    this.padding = const EdgeInsets.all(IFSpacing.paddingCard),
     this.borderColor,
     this.backgroundColor,
     this.glow = false,
@@ -24,14 +25,14 @@ class ForgeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const radius = 16.0;
+    const radius = IFSpacing.radiusCard;
     final effectiveBorder =
         borderColor ?? (selected ? IFColors.red : IFColors.borderSoft);
     final content = Container(
       decoration: BoxDecoration(
         color: backgroundColor ?? (selected ? IFColors.panel2 : IFColors.panel),
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: effectiveBorder),
+        border: Border.all(color: effectiveBorder, width: IFSpacing.borderWidth),
         boxShadow: glow
             ? [
                 BoxShadow(

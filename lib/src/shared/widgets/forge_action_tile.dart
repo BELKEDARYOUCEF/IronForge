@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_theme.dart';
+import '../../core/if_spacing.dart';
 import '../../core/if_text_styles.dart';
 import 'forge_card.dart';
 
@@ -24,7 +25,7 @@ class ForgeActionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ForgeCard(
       onTap: onTap,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(IFSpacing.spacingBlock),
       child: Row(
         children: [
           Container(
