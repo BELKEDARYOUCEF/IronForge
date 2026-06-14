@@ -479,7 +479,7 @@ class _TodaysPlanCard extends StatelessWidget {
                 end: Alignment.bottomRight,
                 colors: [IFColors.red, IFColors.redDark],
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(IFSpacing.radiusInput),
             ),
             child:
                 const Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 20),

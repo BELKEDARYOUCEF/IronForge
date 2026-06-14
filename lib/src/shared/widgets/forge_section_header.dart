@@ -26,11 +26,7 @@ class ForgeSectionHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title,
-                  style: const TextStyle(
-                      color: IFColors.text,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900)),
+              Text(title, style: IFText.h2),
               if (subtitle != null) ...[
                 const SizedBox(height: 3),
                 Text(subtitle!, style: IFText.micro),

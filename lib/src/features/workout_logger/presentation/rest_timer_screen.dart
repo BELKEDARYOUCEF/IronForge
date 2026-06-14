@@ -160,9 +160,11 @@ class _RestTimerScreenState extends State<RestTimerScreen> {
                   height: 42,
                   decoration: BoxDecoration(
                     color: IFColors.red.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(13),
-                    border:
-                        Border.all(color: IFColors.red.withValues(alpha: 0.25)),
+                    borderRadius:
+                        BorderRadius.circular(IFSpacing.radiusInput),
+                    border: Border.all(
+                        color: IFColors.red.withValues(alpha: 0.25),
+                        width: IFSpacing.borderWidth),
                   ),
                   child: const Icon(Icons.timer_outlined, color: IFColors.red),
                 ),
@@ -205,17 +207,18 @@ class _TimerControlButton extends StatelessWidget {
     final foreground = primary ? Colors.white : IFColors.text;
 
     return InkWell(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(IFSpacing.radiusInput),
       onTap: onTap,
       child: Container(
         height: 48,
         decoration: BoxDecoration(
           color: primary ? IFColors.red : IFColors.panel2,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(IFSpacing.radiusInput),
           border: Border.all(
               color: primary
                   ? IFColors.redGlow.withValues(alpha: 0.34)
-                  : IFColors.border),
+                  : IFColors.border,
+              width: IFSpacing.borderWidth),
           boxShadow: primary
               ? [
                   BoxShadow(
