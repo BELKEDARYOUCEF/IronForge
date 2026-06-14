@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/app_theme.dart';
+import '../../../core/if_spacing.dart';
 import '../../../core/if_text_styles.dart';
 import '../../../shared/widgets/forge_card.dart';
 import '../../../shared/widgets/forge_chip.dart';
@@ -702,24 +703,63 @@ class _SetsTable extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final allSets = exercise.sets.asMap().entries.toList();
+    final warmup =
+        allSets.where((e) => e.value.type == SetType.warmup).toList();
+    final working =
+        allSets.where((e) => e.value.type != SetType.warmup).toList();
+    final lastIndex = exercise.sets.length - 1;
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
-          children: [
-            SizedBox(width: 36, child: Text('SET', style: IFText.micro)),
-            Expanded(child: Text('KG', style: IFText.micro)),
-            SizedBox(width: 48, child: Text('REPS', style: IFText.micro)),
-            SizedBox(width: 48, child: Text('RPE', style: IFText.micro)),
-            SizedBox(width: 44),
-          ],
+        // ── Column headers ─────────────────────────────────────────
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 10),
+          child: Row(
+            children: [
+              SizedBox(width: 30, child: Text('SET', style: IFText.micro)),
+              Expanded(child: Text('WEIGHT', style: IFText.micro)),
+              SizedBox(
+                  width: 44,
+                  child: Text('REPS',
+                      style: IFText.micro, textAlign: TextAlign.center)),
+              SizedBox(
+                  width: 40,
+                  child: Text('RPE',
+                      style: IFText.micro, textAlign: TextAlign.center)),
+              SizedBox(width: 60),
+            ],
+          ),
         ),
         const SizedBox(height: 6),
-        for (var i = 0; i < exercise.sets.length; i++)
-          _SetRow(
-              index: i + 1,
-              set: exercise.sets[i],
+
+        // ── Warm-up section (only when warmup sets exist) ──────────
+        if (warmup.isNotEmpty) ...[
+          const _SectionLabel(label: 'WARM UP'),
+          const SizedBox(height: 4),
+          for (final entry in warmup)
+            _SetRow(
+              index: entry.key + 1,
+              set: entry.value,
               exerciseId: exercise.exerciseId,
-              formatWeight: formatWeight),
+              formatWeight: formatWeight,
+              isActive: entry.key == lastIndex,
+            ),
+          const SizedBox(height: 6),
+        ],
+
+        // ── Working sets section ────────────────────────────────────
+        const _SectionLabel(label: 'WORKING SETS'),
+        const SizedBox(height: 4),
+        for (final entry in working)
+          _SetRow(
+            index: entry.key + 1,
+            set: entry.value,
+            exerciseId: exercise.exerciseId,
+            formatWeight: formatWeight,
+            isActive: entry.key == lastIndex,
+          ),
       ],
     );
   }
@@ -837,65 +877,108 @@ class _PlatePreview extends StatelessWidget {
 }
 
 class _SetRow extends ConsumerWidget {
-  const _SetRow(
-      {required this.index,
-      required this.set,
-      required this.exerciseId,
-      required this.formatWeight});
+  const _SetRow({
+    required this.index,
+    required this.set,
+    required this.exerciseId,
+    required this.formatWeight,
+    this.isActive = false,
+  });
 
   final int index;
   final LoggedSet set;
   final String exerciseId;
   final String Function(double kg) formatWeight;
+  final bool isActive;
+
+  static const _activeBg = Color(0xFF1A0606);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isPr =
         ref.read(workoutControllerProvider.notifier).isPr(exerciseId, set);
+
+    final borderColor = isActive
+        ? IFColors.red
+        : isPr
+            ? IFColors.gold
+            : IFColors.borderSoft;
+    final borderWidth = isActive ? 1.0 : IFSpacing.borderWidth;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 7),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      margin: const EdgeInsets.only(bottom: 4),
       decoration: BoxDecoration(
-        color: IFColors.panel2,
+        color: isActive ? _activeBg : IFColors.panel2,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: isPr ? IFColors.gold : IFColors.borderSoft),
+        border: Border.all(color: borderColor, width: borderWidth),
       ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 36,
-            child: Text('$index',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 30,
+              child: Text(
+                '$index',
+                style: TextStyle(
+                  color: isActive ? IFColors.red : IFColors.textMuted,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                formatWeight(set.weight),
                 style: const TextStyle(
-                    color: IFColors.textMuted, fontWeight: FontWeight.w800)),
-          ),
-          Expanded(
-              child: Text(formatWeight(set.weight),
-                  style: const TextStyle(fontWeight: FontWeight.w900))),
-          SizedBox(width: 48, child: Text('${set.reps}')),
-          SizedBox(width: 48, child: Text(set.rpe?.toStringAsFixed(1) ?? '-')),
-          if (isPr)
-            const Icon(Icons.emoji_events_rounded,
-                color: IFColors.gold, size: 18)
-          else
-            const Icon(Icons.check_circle_rounded,
-                color: IFColors.red, size: 18),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert_rounded),
-            onSelected: (action) {
-              if (action == 'edit') {
-                _showEditSetDialog(context, ref);
-              } else if (action == 'delete') {
-                ref
-                    .read(workoutControllerProvider.notifier)
-                    .deleteSet(exerciseId, index - 1);
-              }
-            },
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'edit', child: Text('Edit')),
-              PopupMenuItem(value: 'delete', child: Text('Delete')),
-            ],
-          ),
-        ],
+                    fontWeight: FontWeight.w900, fontSize: 13),
+              ),
+            ),
+            SizedBox(
+              width: 44,
+              child: Text(
+                '${set.reps}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+              ),
+            ),
+            SizedBox(
+              width: 40,
+              child: Text(
+                set.rpe?.toStringAsFixed(1) ?? '-',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    color: IFColors.textMuted,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13),
+              ),
+            ),
+            if (isPr)
+              const Icon(Icons.emoji_events_rounded,
+                  color: IFColors.gold, size: 16)
+            else
+              Icon(Icons.check_circle_rounded,
+                  color: isActive ? IFColors.red : IFColors.textMuted,
+                  size: 16),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert_rounded,
+                  size: 18, color: IFColors.textFaint),
+              onSelected: (action) {
+                if (action == 'edit') {
+                  _showEditSetDialog(context, ref);
+                } else if (action == 'delete') {
+                  ref
+                      .read(workoutControllerProvider.notifier)
+                      .deleteSet(exerciseId, index - 1);
+                }
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem(value: 'edit', child: Text('Edit')),
+                PopupMenuItem(value: 'delete', child: Text('Delete')),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1009,6 +1092,20 @@ class _SetRow extends ConsumerWidget {
           .read(workoutControllerProvider.notifier)
           .updateSet(exerciseId, index - 1, updated);
     }
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 2),
+      child: Text(label, style: IFText.micro),
+    );
   }
 }
 
