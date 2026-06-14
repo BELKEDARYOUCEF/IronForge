@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/app_theme.dart';
+import '../../../core/if_spacing.dart';
 import '../../../core/if_text_styles.dart';
 import '../../../shared/widgets/forge_action_tile.dart';
 import '../../../shared/widgets/forge_card.dart';
-import '../../../shared/widgets/forge_metric_tile.dart';
 import '../../../shared/widgets/forge_primary_button.dart';
 import '../../../shared/widgets/forge_section_header.dart';
 import '../../../shared/widgets/forge_shell.dart';
@@ -33,6 +33,7 @@ class HomeScreen extends ConsumerWidget {
     final streak = _streakDays(sessions);
     final bestStreak = _bestStreakDays(sessions);
     final primaryRoutine = routines.isNotEmpty ? routines.first : null;
+    final benchE1rm = stats.bestE1rmFor('bench_press');
 
     return ForgeShell(
       title: 'IronForge',
@@ -43,19 +44,38 @@ class HomeScreen extends ConsumerWidget {
         const SizedBox(width: 6),
       ],
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         children: [
           _HomeHeader(onSettingsTap: () => context.go('/onboarding')),
-          const SizedBox(height: 14),
-          _StreakHero(streak: streak, bestStreak: bestStreak),
-          const SizedBox(height: 12),
+          const SizedBox(height: IFSpacing.spacingBlock),
+
+          // ── Streak + PR côte à côte ──────────────────────────────
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                    child: _StreakCard(
+                        streak: streak, bestStreak: bestStreak)),
+                const SizedBox(width: 10),
+                Expanded(child: _PrCard(benchE1rm: benchE1rm)),
+              ],
+            ),
+          ),
+          const SizedBox(height: IFSpacing.spacingBlock),
+
+          // ── Quote compacte ───────────────────────────────────────
           const _QuoteCard(),
-          const SizedBox(height: 14),
+          const SizedBox(height: IFSpacing.spacingBlock),
+
+          // ── CTA ──────────────────────────────────────────────────
           ForgePrimaryButton(
               label: 'START WORKOUT',
               icon: Icons.play_arrow_rounded,
               onPressed: () => context.go('/workout')),
-          const SizedBox(height: 16),
+          const SizedBox(height: IFSpacing.spacingBlock),
+
+          // ── Today's Plan ─────────────────────────────────────────
           ForgeSectionHeader(
             title: "Today's Plan",
             action: primaryRoutine == null ? 'Programs' : 'Open',
@@ -69,36 +89,49 @@ class HomeScreen extends ConsumerWidget {
             routine: primaryRoutine,
             onTap: () => context.go('/routines'),
           ),
-          const SizedBox(height: 16),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            childAspectRatio: 1.45,
-            children: [
-              ForgeMetricTile(
-                  label: 'Volume',
-                  value: '${(weekVolume / 1000).toStringAsFixed(1)}t',
-                  icon: Icons.scale_rounded),
-              ForgeMetricTile(
-                  label: 'Workouts',
-                  value: '${sessions.length}',
-                  icon: Icons.check_circle_rounded),
-              ForgeMetricTile(
-                  label: 'Sets',
-                  value: '${stats.totalSets}',
-                  icon: Icons.timer_rounded),
-              ForgeMetricTile(
-                  label: 'Best Bench',
-                  value:
-                      '${stats.bestE1rmFor('bench_press').toStringAsFixed(0)} kg',
-                  icon: Icons.emoji_events_rounded,
-                  iconColor: IFColors.gold),
-            ],
+          const SizedBox(height: IFSpacing.spacingBlock),
+
+          // ── Métriques : rangée de 4 tuiles compactes ─────────────
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _MiniMetric(
+                    label: 'Volume',
+                    value: '${(weekVolume / 1000).toStringAsFixed(1)}t',
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _MiniMetric(
+                    label: 'Workouts',
+                    value: '${sessions.length}',
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _MiniMetric(
+                    label: 'Sets',
+                    value: '${stats.totalSets}',
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _MiniMetric(
+                    label: 'Bench',
+                    value: benchE1rm > 0
+                        ? '${benchE1rm.toStringAsFixed(0)}kg'
+                        : '—',
+                    valueColor: IFColors.gold,
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: IFSpacing.spacingBlock),
+
+          // ── Quick Actions ────────────────────────────────────────
           const ForgeSectionHeader(title: 'Quick Actions'),
           const SizedBox(height: 10),
           GridView.count(
@@ -176,6 +209,8 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
+// ── _HomeHeader ──────────────────────────────────────────────────────────────
+
 class _HomeHeader extends StatelessWidget {
   const _HomeHeader({required this.onSettingsTap});
 
@@ -190,7 +225,7 @@ class _HomeHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Yo, Iron Titan', style: IFText.hero),
-              SizedBox(height: 5),
+              SizedBox(height: 4),
               Text("Let's crush today.", style: IFText.bodyMuted),
             ],
           ),
@@ -209,61 +244,133 @@ class _HomeHeader extends StatelessWidget {
   }
 }
 
-class _StreakHero extends StatelessWidget {
-  const _StreakHero({required this.streak, required this.bestStreak});
+// ── _StreakCard ──────────────────────────────────────────────────────────────
+
+class _StreakCard extends StatelessWidget {
+  const _StreakCard({required this.streak, required this.bestStreak});
 
   final int streak;
   final int bestStreak;
 
   @override
   Widget build(BuildContext context) {
-    final fireCount = streak.clamp(0, 5);
-
     return ForgeCard(
-      glow: true,
-      padding: const EdgeInsets.all(16),
-      child: Row(
+      glow: streak > 0,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: IFColors.orange.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(16),
-              border:
-                  Border.all(color: IFColors.orange.withValues(alpha: 0.28)),
-            ),
-            child: const Icon(Icons.local_fire_department_rounded,
-                color: IFColors.orange, size: 31),
+          const Row(children: [
+            Icon(Icons.local_fire_department_rounded,
+                color: IFColors.orange, size: 15),
+            SizedBox(width: 5),
+            Text('STREAK', style: IFText.micro),
+          ]),
+          const SizedBox(height: 8),
+          Text(
+            '$streak',
+            style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+                color: IFColors.text,
+                height: 1.0),
           ),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('WORKOUT STREAK', style: IFText.micro),
-                const SizedBox(height: 4),
-                Text('$streak days', style: IFText.h1),
-                const SizedBox(height: 3),
-                Text(bestStreak == 0 ? 'Best: -' : 'Best: $bestStreak days',
-                    style: IFText.bodyMuted),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(fireCount == 0 ? '-' : List.filled(fireCount, '🔥').join(),
-                  style: const TextStyle(fontSize: 20)),
-              const SizedBox(height: 6),
-              const Text('LOCAL', style: IFText.micro),
-            ],
+          const Text('days', style: IFText.bodyMuted),
+          const SizedBox(height: 6),
+          Text(
+            bestStreak == 0 ? 'Best: —' : 'Best: ${bestStreak}d',
+            style: IFText.micro,
           ),
         ],
       ),
     );
   }
 }
+
+// ── _PrCard ──────────────────────────────────────────────────────────────────
+
+class _PrCard extends StatelessWidget {
+  const _PrCard({required this.benchE1rm});
+
+  final double benchE1rm;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasData = benchE1rm > 0;
+    final value = hasData ? '${benchE1rm.toStringAsFixed(0)}kg' : '—';
+
+    return ForgeCard(
+      borderColor:
+          hasData ? IFColors.gold.withValues(alpha: 0.40) : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(Icons.emoji_events_rounded,
+                color: hasData ? IFColors.gold : IFColors.textFaint,
+                size: 15),
+            const SizedBox(width: 5),
+            const Text('BENCH PR', style: IFText.micro),
+          ]),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+                color: hasData ? IFColors.gold : IFColors.textFaint,
+                height: 1.0),
+          ),
+          const Text('e1RM', style: IFText.bodyMuted),
+          const SizedBox(height: 6),
+          const Text('est. Epley', style: IFText.micro),
+        ],
+      ),
+    );
+  }
+}
+
+// ── _MiniMetric ──────────────────────────────────────────────────────────────
+
+class _MiniMetric extends StatelessWidget {
+  const _MiniMetric({
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
+
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return ForgeCard(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: valueColor ?? IFColors.text,
+                  height: 1.0),
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(label.toUpperCase(), style: IFText.micro),
+        ],
+      ),
+    );
+  }
+}
+
+// ── _QuoteCard ───────────────────────────────────────────────────────────────
 
 class _QuoteCard extends StatelessWidget {
   const _QuoteCard();
@@ -273,7 +380,6 @@ class _QuoteCard extends StatelessWidget {
     return ForgeCard(
       borderColor: IFColors.redDark,
       backgroundColor: IFColors.panel2,
-      padding: const EdgeInsets.all(14),
       child: Row(
         children: [
           const Expanded(
@@ -284,21 +390,23 @@ class _QuoteCard extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Container(
-            width: 56,
-            height: 56,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
               color: IFColors.red.withValues(alpha: 0.14),
               shape: BoxShape.circle,
               border: Border.all(color: IFColors.red.withValues(alpha: 0.28)),
             ),
             child: const Icon(Icons.fitness_center_rounded,
-                color: IFColors.red, size: 26),
+                color: IFColors.red, size: 22),
           ),
         ],
       ),
     );
   }
 }
+
+// ── _TodaysPlanCard ──────────────────────────────────────────────────────────
 
 class _TodaysPlanCard extends StatelessWidget {
   const _TodaysPlanCard({
@@ -326,27 +434,27 @@ class _TodaysPlanCard extends StatelessWidget {
         : '$frequency days/week • ${routine!.progressionLabel}';
     final badge = routine == null ? 'SUGGESTED' : 'ACTIVE';
     final footer = routine == null
-        ? '5 Exercises • PPL'
+        ? 'Offline program • Set your routine'
         : 'Offline program • Progression ready';
 
     return ForgeCard(
       onTap: onTap,
       selected: routine != null,
-      padding: const EdgeInsets.all(14),
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [IFColors.red, IFColors.redDark],
               ),
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.rocket_launch_rounded, color: Colors.white),
+            child:
+                const Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -362,7 +470,7 @@ class _TodaysPlanCard extends StatelessWidget {
                             style: IFText.h3)),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                          horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: IFColors.red.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(999),
@@ -377,12 +485,12 @@ class _TodaysPlanCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: 4),
                 Text(subtitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: IFText.bodyMuted),
-                const SizedBox(height: 5),
+                const SizedBox(height: 4),
                 Text(footer, style: IFText.micro),
               ],
             ),
