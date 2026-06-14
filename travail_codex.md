@@ -223,6 +223,38 @@ flutter build apk --debug
 build/app/outputs/flutter-apk/app-debug.apk
 ```
 
+## 14 juin 2026 - Verification complete et publication GitHub
+
+Travail effectue :
+
+- Verification complete du projet apres les 9 phases de redesign IronForge.
+- Correction de la regression `START WORKOUT` : le Workout Logger affichait un fond noir avec l'erreur Flutter `Cannot hit test a render box that has never been laid out`.
+- Cause corrigee : bouton `FINISH` du header Workout Logger avec contrainte de largeur infinie.
+- Ajout d'un test widget de regression : ouverture du Workout Logger depuis le bouton `START WORKOUT`.
+- Polish supplementaire des controles du Workout Logger pour supprimer les boutons Material bruts restants dans cet ecran.
+- Mise a jour des documents README, travail Codex, release, Play Store et securite/confidentialite.
+
+Validation finale :
+
+```text
+flutter pub get
+OK
+
+flutter analyze
+No issues found
+
+flutter test
+9 tests passed
+
+flutter build apk --debug
+build/app/outputs/flutter-apk/app-debug.apk
+```
+
+Etat :
+
+- Branche locale `main` prete a pousser sur GitHub.
+- `origin/main` sera mis a jour avec les commits de redesign et de correction.
+
 ## 13 juin 2026 - Preparation depot GitHub pour analyse externe
 
 Travail effectue :

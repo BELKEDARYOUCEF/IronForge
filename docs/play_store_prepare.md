@@ -1,6 +1,6 @@
 # IronForge Play Store Preparation
 
-Date: 13 juin 2026
+Date: 14 juin 2026
 Project: `/home/yobel/Documents/02_Projets/Developpement/IronForge`
 
 ## Package
@@ -30,6 +30,9 @@ Current features:
 - custom exercises and favorites;
 - onboarding preferences;
 - kg/lbs workout entry.
+- rest timer;
+- plate calculator;
+- premium red/black IronForge UI.
 
 ## Permissions
 
@@ -43,9 +46,12 @@ If future features add camera, media, health, or location access, update this fi
 
 - Home dashboard.
 - Live workout logger with sets.
+- Rest timer.
+- Plate calculator.
 - Progress chart.
 - Exercise library search/filter.
-- Routine editor.
+- Programs/Routines.
+- AI Coach coming-soon surface.
 - Onboarding setup.
 
 ## Data Safety Draft

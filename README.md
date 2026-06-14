@@ -6,6 +6,16 @@ IronForge is a premium, offline-first workout tracker for serious lifters. The c
 
 This repository contains a functional Flutter app with local Hive persistence, Riverpod providers, GoRouter navigation, premium shared UI components, and tests for the core offline workflows.
 
+Latest verified state:
+
+- Branch: `main`
+- Android package: `com.ironforge.app`
+- Storage: local Hive, offline-first
+- Sensitive permissions: none declared
+- Firebase: not added
+- RevenueCat: not added
+- Debug APK: builds successfully
+
 ## Setup
 
 1. Install Flutter 3.24 or newer.
@@ -21,6 +31,7 @@ flutter run
 ```bash
 flutter analyze
 flutter test
+flutter build apk --debug
 ```
 
 ## Folder Structure
@@ -58,6 +69,23 @@ lib/
 - Exercise library with search, filters, favorites, and custom exercises.
 - Programs screen with editable local routines.
 - AI Coach and Pro screens as premium coming-soon surfaces.
+- Regression coverage for opening the workout logger from `START WORKOUT`.
+
+## Latest Validation
+
+```text
+flutter pub get
+OK
+
+flutter analyze
+No issues found
+
+flutter test
+9 tests passed
+
+flutter build apk --debug
+build/app/outputs/flutter-apk/app-debug.apk
+```
 
 ## Next Engineering Steps
 

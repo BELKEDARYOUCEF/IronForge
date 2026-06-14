@@ -1,6 +1,6 @@
 # IronForge Security And Privacy
 
-Date: 13 juin 2026
+Date: 14 juin 2026
 Project: `/home/yobel/Documents/02_Projets/Developpement/IronForge`
 
 ## Current Data Model
@@ -13,6 +13,8 @@ IronForge stores data locally with Hive:
 - onboarding profile preferences.
 
 No Firebase, cloud sync, account system, photos, location, or health platform integration is active.
+
+AI Coach and Premium screens are local UI surfaces only. They do not call an AI API, payment SDK, analytics SDK, or cloud service.
 
 ## Android Permissions
 

@@ -1,6 +1,6 @@
 # IronForge Release Build
 
-Date: 13 juin 2026
+Date: 14 juin 2026
 Project: `/home/yobel/Documents/02_Projets/Developpement/IronForge`
 
 ## Android Package
@@ -37,6 +37,18 @@ Output:
 
 ```text
 build/app/outputs/bundle/release/app-release.aab
+```
+
+## Latest Debug Build Verification
+
+```bash
+flutter build apk --debug
+```
+
+Output:
+
+```text
+build/app/outputs/flutter-apk/app-debug.apk
 ```
 
 ## Remaining Before Store Upload
