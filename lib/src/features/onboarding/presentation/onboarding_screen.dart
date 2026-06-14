@@ -24,6 +24,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   String units = 'kg';
   int frequency = 4;
   String trainingType = 'PPL';
+  double? bodyWeightKg;
 
   @override
   Widget build(BuildContext context) {
@@ -65,6 +66,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               value: trainingType,
               values: const ['PPL', 'Upper/Lower', 'Full Body', 'Bro Split'],
               onChanged: (value) => setState(() => trainingType = value)),
+          _WeightPicker(
+              value: bodyWeightKg,
+              units: units,
+              onChanged: (v) => setState(() => bodyWeightKg = v)),
           const SizedBox(height: 20),
           ForgePrimaryButton(
             label: 'FINISH SETUP',
@@ -76,7 +81,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         level: level,
                         units: units,
                         frequencyPerWeek: frequency,
-                        trainingType: trainingType),
+                        trainingType: trainingType,
+                        bodyWeightKg: bodyWeightKg),
                   );
               ref.invalidate(userProfileProvider);
               if (context.mounted) context.go('/');
@@ -148,6 +154,83 @@ class _FrequencyPicker extends StatelessWidget {
             IconButton(
                 onPressed: () => onChanged((value + 1).clamp(3, 6)),
                 icon: const Icon(Icons.add_rounded)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WeightPicker extends StatefulWidget {
+  const _WeightPicker({
+    required this.value,
+    required this.units,
+    required this.onChanged,
+  });
+
+  final double? value;
+  final String units;
+  final ValueChanged<double?> onChanged;
+
+  @override
+  State<_WeightPicker> createState() => _WeightPickerState();
+}
+
+class _WeightPickerState extends State<_WeightPicker> {
+  late final TextEditingController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(
+        text: widget.value != null
+            ? widget.value!.toStringAsFixed(0)
+            : '');
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: ForgeCard(
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Body weight (${widget.units})',
+                      style: IFText.cardTitle),
+                  const SizedBox(height: 2),
+                  const Text('Used to estimate calories',
+                      style: IFText.micro),
+                ],
+              ),
+            ),
+            SizedBox(
+              width: 80,
+              child: TextField(
+                controller: _ctrl,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                textAlign: TextAlign.center,
+                style: IFText.h3,
+                decoration: InputDecoration(
+                  hintText: '—',
+                  suffixText: widget.units,
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 8),
+                ),
+                onChanged: (v) =>
+                    widget.onChanged(double.tryParse(v.replaceAll(',', '.'))),
+              ),
+            ),
           ],
         ),
       ),

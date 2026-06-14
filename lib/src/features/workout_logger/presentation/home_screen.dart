@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/if_spacing.dart';
 import '../../../core/if_text_styles.dart';
+import '../domain/calorie_estimator.dart';
 import '../../../shared/widgets/forge_action_tile.dart';
 import '../../../shared/widgets/forge_card.dart';
 import '../../../shared/widgets/forge_primary_button.dart';
@@ -34,6 +35,7 @@ class HomeScreen extends ConsumerWidget {
     final bestStreak = _bestStreakDays(sessions);
     final primaryRoutine = routines.isNotEmpty ? routines.first : null;
     final benchE1rm = stats.bestE1rmFor('bench_press');
+    final estimatedDuration = _avgSessionDuration(sessions);
 
     return ForgeShell(
       title: 'IronForge',
@@ -87,6 +89,8 @@ class HomeScreen extends ConsumerWidget {
             profileGoal: profile?.goal,
             profileFrequency: profile?.frequencyPerWeek,
             routine: primaryRoutine,
+            bodyWeightKg: profile?.bodyWeightKg,
+            estimatedDuration: estimatedDuration,
             onTap: () => context.go('/routines'),
           ),
           const SizedBox(height: IFSpacing.spacingBlock),
@@ -168,6 +172,18 @@ class HomeScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  /// Average duration of completed sessions; falls back to 60 min if none.
+  Duration _avgSessionDuration(List<WorkoutSession> sessions) {
+    final completed = sessions
+        .where((s) => s.completedAt != null)
+        .map((s) => s.completedAt!.difference(s.startedAt).inMinutes)
+        .where((m) => m > 0)
+        .toList();
+    if (completed.isEmpty) return const Duration(minutes: 60);
+    final avg = completed.reduce((a, b) => a + b) ~/ completed.length;
+    return Duration(minutes: avg);
   }
 
   int _streakDays(List<WorkoutSession> sessions) {
@@ -414,6 +430,8 @@ class _TodaysPlanCard extends StatelessWidget {
     required this.profileGoal,
     required this.profileFrequency,
     required this.routine,
+    required this.bodyWeightKg,
+    required this.estimatedDuration,
     required this.onTap,
   });
 
@@ -421,6 +439,8 @@ class _TodaysPlanCard extends StatelessWidget {
   final String? profileGoal;
   final int? profileFrequency;
   final Routine? routine;
+  final double? bodyWeightKg;
+  final Duration estimatedDuration;
   final VoidCallback onTap;
 
   @override
@@ -436,6 +456,14 @@ class _TodaysPlanCard extends StatelessWidget {
     final footer = routine == null
         ? 'Offline program • Set your routine'
         : 'Offline program • Progression ready';
+
+    // Calories via MET estimator — null if no weight in profile
+    final kcal = bodyWeightKg != null
+        ? estimateKcal(
+            bodyWeightKg: bodyWeightKg!, duration: estimatedDuration)
+        : null;
+    final calorieLabel =
+        kcal != null ? '$kcal kcal est.' : '— kcal est.';
 
     return ForgeCard(
       onTap: onTap,
@@ -491,7 +519,15 @@ class _TodaysPlanCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: IFText.bodyMuted),
                 const SizedBox(height: 4),
-                Text(footer, style: IFText.micro),
+                Row(
+                  children: [
+                    Expanded(child: Text(footer, style: IFText.micro)),
+                    const Icon(Icons.local_fire_department_rounded,
+                        size: 11, color: IFColors.orange),
+                    const SizedBox(width: 3),
+                    Text(calorieLabel, style: IFText.micro),
+                  ],
+                ),
               ],
             ),
           ),

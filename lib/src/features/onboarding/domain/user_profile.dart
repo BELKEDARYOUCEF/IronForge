@@ -5,6 +5,7 @@ class UserProfile {
     required this.units,
     required this.frequencyPerWeek,
     required this.trainingType,
+    this.bodyWeightKg,
   });
 
   final String goal;
@@ -12,6 +13,7 @@ class UserProfile {
   final String units;
   final int frequencyPerWeek;
   final String trainingType;
+  final double? bodyWeightKg;
 
   Map<String, Object?> toMap() {
     return {
@@ -20,6 +22,7 @@ class UserProfile {
       'units': units,
       'frequencyPerWeek': frequencyPerWeek,
       'trainingType': trainingType,
+      'bodyWeightKg': bodyWeightKg,
     };
   }
 
@@ -30,6 +33,7 @@ class UserProfile {
       units: map['units'] as String,
       frequencyPerWeek: ((map['frequencyPerWeek'] as num?) ?? 3).toInt(),
       trainingType: map['trainingType'] as String,
+      bodyWeightKg: (map['bodyWeightKg'] as num?)?.toDouble(),
     );
   }
 }
