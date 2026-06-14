@@ -47,10 +47,10 @@ class WorkoutLoggerScreen extends ConsumerWidget {
                     title: 'Add your first lift.',
                     message:
                         'Pick an exercise and start forging your baseline.',
-                    action: OutlinedButton.icon(
+                    action: ForgePrimaryButton(
+                      label: 'BUILD LIBRARY',
+                      icon: Icons.add_rounded,
                       onPressed: () => context.go('/exercises'),
-                      icon: const Icon(Icons.add_rounded),
-                      label: const Text('BUILD LIBRARY'),
                     ),
                   ),
               ],
@@ -101,25 +101,24 @@ class _WorkoutHeader extends ConsumerWidget {
                 onTap: () {},
               ),
               const SizedBox(width: 8),
-              SizedBox(
+              ForgePrimaryButton(
+                label: 'FINISH',
+                icon: Icons.flag_rounded,
+                fullWidth: false,
                 height: 42,
-                child: ElevatedButton.icon(
-                  onPressed: workout.totalSets == 0
-                      ? null
-                      : () async {
-                          await ref
-                              .read(workoutControllerProvider.notifier)
-                              .finishWorkout();
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('Workout saved offline.')),
-                          );
-                          context.go('/');
-                        },
-                  icon: const Icon(Icons.flag_rounded, size: 18),
-                  label: const Text('FINISH'),
-                ),
+                onPressed: workout.totalSets == 0
+                    ? null
+                    : () async {
+                        await ref
+                            .read(workoutControllerProvider.notifier)
+                            .finishWorkout();
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Workout saved offline.')),
+                        );
+                        context.go('/');
+                      },
               ),
             ],
           ),
@@ -606,20 +605,20 @@ class _LoggedExerciseCardState extends ConsumerState<_LoggedExerciseCard> {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: _QuickSetButton(
+                    label: 'SAME',
+                    icon: Icons.replay_rounded,
                     onPressed: () =>
                         controller.addSameAsLastSet(widget.exercise.exerciseId),
-                    icon: const Icon(Icons.replay_rounded),
-                    label: const Text('SAME'),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: _QuickSetButton(
+                    label: 'SMART +',
+                    icon: Icons.auto_awesome_rounded,
                     onPressed: () =>
                         controller.addSmartSet(widget.exercise.exerciseId),
-                    icon: const Icon(Icons.auto_awesome_rounded),
-                    label: const Text('SMART +'),
                   ),
                 ),
               ],
@@ -794,7 +793,7 @@ class _RestTimerCompact extends StatelessWidget {
               onPressed: onToggle,
               icon: Icon(
                   running ? Icons.pause_rounded : Icons.play_arrow_rounded)),
-          TextButton(onPressed: onAdd15, child: const Text('+15s')),
+          _TinyTextAction(label: '+15s', onTap: onAdd15),
         ],
       ),
     );
@@ -966,9 +965,12 @@ class _SetRow extends ConsumerWidget {
               Row(
                 children: [
                   Expanded(
-                      child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('CANCEL'))),
+                    child: _QuickSetButton(
+                      label: 'CANCEL',
+                      icon: Icons.close_rounded,
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: ForgePrimaryButton(
@@ -1007,6 +1009,77 @@ class _SetRow extends ConsumerWidget {
           .read(workoutControllerProvider.notifier)
           .updateSet(exerciseId, index - 1, updated);
     }
+  }
+}
+
+class _QuickSetButton extends StatelessWidget {
+  const _QuickSetButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(13),
+      onTap: onPressed,
+      child: Container(
+        height: 44,
+        decoration: BoxDecoration(
+          color: IFColors.panel2,
+          borderRadius: BorderRadius.circular(13),
+          border: Border.all(color: IFColors.border),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: IFColors.red, size: 18),
+            const SizedBox(width: 7),
+            Text(
+              label,
+              style: const TextStyle(
+                color: IFColors.text,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TinyTextAction extends StatelessWidget {
+  const _TinyTextAction({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: IFColors.red.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: IFColors.red.withValues(alpha: 0.26)),
+        ),
+        child: Text(
+          label,
+          style:
+              const TextStyle(color: IFColors.red, fontWeight: FontWeight.w900),
+        ),
+      ),
+    );
   }
 }
 

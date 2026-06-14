@@ -9,4 +9,14 @@ void main() {
     expect(find.text('IronForge'), findsOneWidget);
     expect(find.text('START WORKOUT'), findsOneWidget);
   });
+
+  testWidgets('Workout logger opens from home', (tester) async {
+    await tester.pumpWidget(const ProviderScope(child: IronForgeApp()));
+
+    await tester.tap(find.text('START WORKOUT'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Live Workout'), findsOneWidget);
+    expect(find.text('QUICK ADD EXERCISE'), findsOneWidget);
+  });
 }
