@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/app_theme.dart';
+import '../../../core/if_spacing.dart';
 import '../../../core/if_text_styles.dart';
 import '../../../shared/widgets/forge_card.dart';
 import '../../../shared/widgets/forge_chip.dart';
@@ -37,35 +38,41 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
         children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final item in const ['My Programs', 'Explore'])
-                ForgeChip(
-                  label: item,
-                  selected: tab == item,
-                  onTap: () => setState(() => tab = item),
-                ),
-            ],
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final item in const ['My Programs', 'Explore'])
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ForgeChip(
+                      label: item,
+                      selected: tab == item,
+                      onTap: () => setState(() => tab = item),
+                    ),
+                  ),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: IFSpacing.spacingBlock),
           if (tab == 'Explore') ...[
             for (final program in _explorePrograms)
               Padding(
-                padding: const EdgeInsets.only(bottom: 12),
+                padding:
+                    const EdgeInsets.only(bottom: IFSpacing.spacingBlock),
                 child: _ProgramCard(program: program),
               ),
           ] else ...[
             ForgePrimaryButton(
               label: 'BUILD CUSTOM PROGRAM',
               icon: Icons.add_rounded,
-              height: 48,
+              height: 46,
               onPressed: () => _showRoutineDialog(context, ref),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: IFSpacing.spacingBlock),
             routines.when(
-              loading: () => const LinearProgressIndicator(color: IFColors.red),
+              loading: () =>
+                  const LinearProgressIndicator(color: IFColors.red),
               error: (error, stackTrace) =>
                   Text('Programs unavailable: $error'),
               data: (items) {
@@ -87,7 +94,8 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
                   children: [
                     for (final routine in items)
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.only(
+                            bottom: IFSpacing.spacingBlock),
                         child: _RoutineCard(
                           routine: routine,
                           onEdit: () => _showRoutineDialog(context, ref,
@@ -165,8 +173,8 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
               TextField(
                   controller: stepController,
                   keyboardType: TextInputType.number,
-                  decoration:
-                      const InputDecoration(labelText: 'Progression step kg')),
+                  decoration: const InputDecoration(
+                      labelText: 'Progression step kg')),
               const SizedBox(height: 10),
               TextField(
                   controller: notesController,
@@ -194,7 +202,8 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
                           Routine(
                             id: routine?.id ?? const Uuid().v4(),
                             name: name,
-                            daysPerWeek: int.tryParse(daysController.text) ?? 3,
+                            daysPerWeek:
+                                int.tryParse(daysController.text) ?? 3,
                             progressionStepKg:
                                 double.tryParse(stepController.text) ?? 2.5,
                             notes: notesController.text.trim().isEmpty
@@ -228,21 +237,25 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
 const _explorePrograms = [
   _ExploreProgram(
       'PPL 6 Day Split',
-      'Intermediate • 6 days/week',
+      'Intermediate · 6 days/week',
       'POPULAR',
       Icons.local_fire_department_rounded,
       [IFColors.redDark, IFColors.panel, IFColors.black]),
   _ExploreProgram(
       '5x5 Strength',
-      'Beginner • 3 days/week',
+      'Beginner · 3 days/week',
       'STRENGTH',
       Icons.fitness_center_rounded,
       [IFColors.panel3, IFColors.redDark, IFColors.black]),
-  _ExploreProgram('Upper / Lower', 'Intermediate • 4 days/week', 'BALANCED',
-      Icons.swap_vert_rounded, [IFColors.blue, IFColors.panel, IFColors.black]),
+  _ExploreProgram(
+      'Upper / Lower',
+      'Intermediate · 4 days/week',
+      'BALANCED',
+      Icons.swap_vert_rounded,
+      [IFColors.blue, IFColors.panel, IFColors.black]),
   _ExploreProgram(
       'Bro Split',
-      'Advanced • 5 days/week',
+      'Advanced · 5 days/week',
       'VOLUME',
       Icons.emoji_events_rounded,
       [IFColors.gold, IFColors.redDark, IFColors.black]),
@@ -269,10 +282,10 @@ class _ProgramCard extends StatelessWidget {
     return ForgeCard(
       padding: EdgeInsets.zero,
       child: Container(
-        height: 132,
-        padding: const EdgeInsets.all(16),
+        height: 120,
+        padding: const EdgeInsets.all(IFSpacing.paddingCard),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(IFSpacing.radiusCard),
           gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -281,16 +294,17 @@ class _ProgramCard extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 54,
-              height: 54,
+              width: 50,
+              height: 50,
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.24),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+                borderRadius: BorderRadius.circular(14),
+                border:
+                    Border.all(color: Colors.white.withValues(alpha: 0.16)),
               ),
-              child: Icon(program.icon, color: IFColors.text, size: 31),
+              child: Icon(program.icon, color: IFColors.text, size: 28),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: IFSpacing.spacingBlock),
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -305,7 +319,7 @@ class _ProgramCard extends StatelessWidget {
                               style: IFText.h2)),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
+                            horizontal: 7, vertical: 3),
                         decoration: BoxDecoration(
                           color: IFColors.black.withValues(alpha: 0.32),
                           borderRadius: BorderRadius.circular(999),
@@ -316,15 +330,16 @@ class _ProgramCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(program.subtitle, style: IFText.bodyMuted),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   const ForgeChip(
                       label: 'Auto progression',
                       icon: Icons.auto_awesome_rounded),
                 ],
               ),
             ),
+            const SizedBox(width: 8),
             const Icon(Icons.star_border_rounded, color: IFColors.gold),
           ],
         ),
@@ -347,20 +362,21 @@ class _RoutineCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ForgeCard(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(IFSpacing.paddingCard),
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                  colors: [IFColors.red, IFColors.redDark]),
-              borderRadius: BorderRadius.circular(14),
+              gradient:
+                  const LinearGradient(colors: [IFColors.red, IFColors.redDark]),
+              borderRadius: BorderRadius.circular(IFSpacing.radiusInput),
             ),
-            child: const Icon(Icons.rocket_launch_rounded, color: Colors.white),
+            child: const Icon(Icons.rocket_launch_rounded,
+                color: Colors.white, size: 22),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: IFSpacing.spacingBlock),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -369,26 +385,27 @@ class _RoutineCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: IFText.cardTitle),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
                 Text(
-                    '${routine.daysPerWeek} days/week • ${routine.progressionLabel}',
+                    '${routine.daysPerWeek} days/week · ${routine.progressionLabel}',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: IFText.bodyMuted),
+                    style: IFText.micro),
                 if (routine.notes != null) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(routine.notes!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: IFText.micro),
+                      style: IFText.bodyMuted),
                 ],
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          const Icon(Icons.star_border_rounded, color: IFColors.gold),
+          const SizedBox(width: 4),
+          const Icon(Icons.star_border_rounded,
+              color: IFColors.gold, size: 22),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert_rounded),
+            icon: const Icon(Icons.more_vert_rounded, size: 20),
             onSelected: (action) {
               if (action == 'edit') {
                 onEdit();
