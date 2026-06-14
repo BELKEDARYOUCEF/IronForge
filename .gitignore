@@ -27,6 +27,18 @@ android/.gradle/
 coverage/
 test-results/
 
-# Local Codex/user notes and previews
+# Local notes and previews
 app_preview.png
 tester l’app de 3 façons
+
+# Claude Code session data
+.claude/
+
+# Internal planning and work documents
+ORIGINAL_PROMPT.md
+PROJECT_PROMPT.md
+IRONFORGE_CODEX_REDESIGN_INSTRUCTIONS.md
+IronForge_Plan_ClaudeCode.md
+IronForge_Prompt_100pct_Preview.md
+RAPPORT_TRAVAIL_CODEX_IRONFORGE.md
+travail_codex.md
