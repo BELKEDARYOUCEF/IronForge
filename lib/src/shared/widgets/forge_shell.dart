@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/app_theme.dart';
 import 'forge_bottom_nav.dart';
+import 'forge_screen_background.dart';
 
 class ForgeShell extends StatelessWidget {
   const ForgeShell({
@@ -19,7 +20,11 @@ class ForgeShell extends StatelessWidget {
   final bool showBottomNav;
 
   bool _canGoBack(String path) {
-    return path != '/' && path != '/history' && path != '/exercises' && path != '/progress' && path != '/routines';
+    return path != '/' &&
+        path != '/history' &&
+        path != '/exercises' &&
+        path != '/progress' &&
+        path != '/routines';
   }
 
   @override
@@ -30,12 +35,18 @@ class ForgeShell extends StatelessWidget {
       backgroundColor: IFColors.black,
       appBar: AppBar(
         title: Text(title),
+        backgroundColor: IFColors.black,
+        surfaceTintColor: Colors.transparent,
         leading: _canGoBack(path)
-            ? IconButton(icon: const Icon(Icons.arrow_back_rounded), onPressed: () => context.go('/'))
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: () => context.go('/'))
             : null,
         actions: actions,
       ),
-      body: SafeArea(bottom: false, child: child),
+      body: ForgeScreenBackground(
+        child: SafeArea(bottom: false, child: child),
+      ),
       bottomNavigationBar: showBottomNav ? const ForgeBottomNav() : null,
     );
   }

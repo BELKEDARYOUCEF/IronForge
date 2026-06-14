@@ -1,1138 +1,495 @@
-# IRONFORGE — Instructions complètes pour Codex
+# IRONFORGE — Plan de travail professionnel par phases pour Codex
 
-Objectif : transformer l’application Flutter IronForge existante en une app premium conforme à la preview rouge/noir fournie par le propriétaire du projet.
-
-Repo : `https://github.com/BELKEDARYOUCEF/IronForge`
+Repo GitHub : `https://github.com/BELKEDARYOUCEF/IronForge`
 Branche : `main`
+Framework : `Flutter`
 Package Android : `com.ironforge.app`
-Framework : Flutter
-Nom app : `IronForge`
-
-Priorité : redesign visuel + expérience utilisateur premium, sans casser la base locale Hive déjà fonctionnelle.
+Commit redesign actuel : `89bb362 Redesign IronForge UI in red black style`
 
 ---
 
-## 1. Contexte actuel du projet
+# RÈGLE ABSOLUE POUR CODEX
 
-Le projet est déjà une base Flutter offline-first fonctionnelle.
+Tu ne dois PAS tout faire d’un coup.
 
-Fonctionnalités déjà présentes :
+Tu dois travailler phase par phase.
+Quand l’utilisateur te demande une phase, tu fais uniquement cette phase, tu valides, tu commits, puis tu t’arrêtes.
 
-* Hive local storage pour workouts, routines, exercices, profil onboarding.
-* Workout logger local.
-* Historique réel branché sur Hive.
-* Routines modifiables.
-* Exercices custom et favoris.
-* Onboarding local.
-* Graphiques via `fl_chart`.
-* Tests et analyse statique déjà passés.
-* Package Android final : `com.ironforge.app`.
-* Pas de Firebase.
-* Pas de RevenueCat.
-* Pas de permissions sensibles Android.
+Ne commence jamais la phase suivante sans instruction explicite de l’utilisateur.
 
-Ne pas repartir de zéro.
-Ne pas remplacer le projet par un template.
-Il faut conserver l’architecture actuelle et améliorer l’UI/UX pour qu’elle ressemble à la preview IronForge rouge/noir.
+À chaque phase :
+
+1. Lis les fichiers nécessaires.
+2. Fais uniquement le travail demandé.
+3. Ne casse pas les fonctionnalités existantes.
+4. Exécute les commandes de validation demandées.
+5. Corrige les erreurs.
+6. Fais un commit clair.
+7. Résume exactement ce qui a été fait.
+8. Stop.
 
 ---
 
-## 2. Objectif final
+# ORDRE DE LECTURE OBLIGATOIRE
 
-L’application doit ressembler à une app premium pour serious lifters, powerlifters, bodybuilders et gym bros.
+Avant toute modification, lis dans cet ordre :
 
-Le résultat doit être proche de la preview envoyée :
-
-* branding IronForge rouge/noir ;
-* dashboard premium ;
-* workout logger dense et rapide ;
-* rest timer circulaire ;
-* plate calculator visuel ;
-* progress overview avec chart rouge ;
-* history screen ;
-* exercise library ;
-* programs/routines ;
-* AI Coach placeholder ;
-* bottom navigation persistante ;
-* style dark brutalist premium.
-
-L’app doit donner l’impression d’être :
-
-* rapide ;
-* agressive ;
-* premium ;
-* masculine ;
-* faite pour progresser en force ;
-* addictive à utiliser après chaque set.
+1. `IRONFORGE_CODEX_REDESIGN_INSTRUCTIONS.md`
+2. `travail_codex.md`
+3. `README.md`
+4. `pubspec.yaml`
+5. `lib/src/core/app_theme.dart`
+6. `lib/src/core/router.dart`
+7. `lib/src/shared/widgets/`
+8. `lib/src/features/`
 
 ---
 
-## 3. Direction artistique cible
+# CONTEXTE IMPORTANT
 
-Style cible :
-
-* Dark brutalist premium.
-* Noir profond.
-* Rouge IronForge comme couleur principale.
-* Cartes sombres avec bordures fines.
-* Typographie forte, compacte, masculine.
-* Icônes simples, agressives, orientées gym.
-* Beaucoup de contraste.
-* Boutons larges, rapides à utiliser en salle.
-* Bottom navigation persistante.
-* Effets subtils : glow rouge, ombres noires, highlight PR doré.
-* Zéro look pastel.
-* Zéro look fitness générique.
-* Zéro accent teal/vert comme couleur principale.
-
-La preview cible contient ces écrans :
-
-1. Home dashboard
-2. Workout logger / Bench Press
-3. Rest Timer
-4. Plate Calculator
-5. Progress Overview
-6. History
-7. Exercises
-8. Programs
-9. AI Coach
-
----
-
-## 4. Palette officielle IronForge
-
-Remplacer l’accent teal actuel par rouge IronForge.
-
-Créer ou modifier :
-
-`lib/src/core/app_theme.dart`
-
-Utiliser cette palette :
-
-```dart
-import 'package:flutter/material.dart';
-
-class IFColors {
-  static const black = Color(0xFF050505);
-  static const black2 = Color(0xFF090909);
-  static const panel = Color(0xFF101010);
-  static const panel2 = Color(0xFF151515);
-  static const panel3 = Color(0xFF1B1B1B);
-
-  static const border = Color(0xFF2A2A2A);
-  static const borderSoft = Color(0xFF202020);
-
-  static const red = Color(0xFFE52B2B);
-  static const redDark = Color(0xFF9F1717);
-  static const redGlow = Color(0xFFFF3B30);
-
-  static const orange = Color(0xFFFF6A00);
-  static const gold = Color(0xFFFFC857);
-  static const green = Color(0xFF2ED573);
-  static const blue = Color(0xFF3B82F6);
-
-  static const text = Color(0xFFF4F4F5);
-  static const textMuted = Color(0xFFA1A1AA);
-  static const textFaint = Color(0xFF71717A);
-}
-```
-
-Important :
-
-* Rouge = couleur principale.
-* Gold = PR, trophée, record.
-* Green = gains positifs, progression, recovery.
-* Orange = streak/fire.
-* Blue = AI/insight secondaire.
-* Ne plus utiliser le teal comme accent principal.
-* Si le code actuel utilise `forgeElectric`, remplacer son usage principal par `IFColors.red`.
-
----
-
-## 5. Thème Flutter final
-
-Mettre à jour `buildIronForgeTheme()` dans `app_theme.dart`.
-
-```dart
-ThemeData buildIronForgeTheme() {
-  final scheme = ColorScheme.fromSeed(
-    seedColor: IFColors.red,
-    brightness: Brightness.dark,
-    primary: IFColors.red,
-    secondary: IFColors.gold,
-    surface: IFColors.panel,
-    error: IFColors.redGlow,
-  );
-
-  return ThemeData(
-    useMaterial3: true,
-    brightness: Brightness.dark,
-    scaffoldBackgroundColor: IFColors.black,
-    colorScheme: scheme,
-    fontFamily: 'Roboto',
-    appBarTheme: const AppBarTheme(
-      backgroundColor: IFColors.black,
-      foregroundColor: IFColors.text,
-      elevation: 0,
-      centerTitle: false,
-      titleTextStyle: TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w900,
-        letterSpacing: 0.2,
-        color: IFColors.text,
-      ),
-    ),
-    cardTheme: CardThemeData(
-      color: IFColors.panel,
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: const BorderSide(color: IFColors.borderSoft),
-      ),
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: IFColors.panel2,
-      labelStyle: const TextStyle(color: IFColors.textMuted),
-      hintStyle: const TextStyle(color: IFColors.textFaint),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: IFColors.border),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: IFColors.border),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: IFColors.red),
-      ),
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: IFColors.red,
-        foregroundColor: Colors.white,
-        minimumSize: const Size.fromHeight(52),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        textStyle: const TextStyle(
-          fontWeight: FontWeight.w900,
-          letterSpacing: 0.5,
-        ),
-      ),
-    ),
-    outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: IFColors.text,
-        side: const BorderSide(color: IFColors.border),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    ),
-    dividerTheme: const DividerThemeData(
-      color: IFColors.borderSoft,
-      thickness: 1,
-    ),
-    snackBarTheme: SnackBarThemeData(
-      backgroundColor: IFColors.panel2,
-      contentTextStyle: const TextStyle(
-        color: IFColors.text,
-        fontWeight: FontWeight.w700,
-      ),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-    ),
-  );
-}
-```
-
-Si des constantes anciennes existent encore :
-
-```dart
-const forgeBlack = ...
-const forgePanel = ...
-const forgeElectric = ...
-```
-
-Ne pas forcément tout supprimer immédiatement si trop risqué, mais les mapper vers la nouvelle palette :
-
-```dart
-const forgeBlack = IFColors.black;
-const forgePanel = IFColors.panel;
-const forgePanelAlt = IFColors.panel2;
-const forgeSteel = IFColors.textMuted;
-const forgeText = IFColors.text;
-const forgeElectric = IFColors.red;
-const forgeHot = IFColors.redGlow;
-const forgeGold = IFColors.gold;
-```
-
----
-
-## 6. Typographie
-
-Créer :
-
-`lib/src/core/if_text_styles.dart`
-
-Contenu :
-
-```dart
-import 'package:flutter/material.dart';
-import 'app_theme.dart';
-
-class IFText {
-  static const hero = TextStyle(
-    fontSize: 32,
-    fontWeight: FontWeight.w900,
-    height: 1.0,
-    letterSpacing: -0.8,
-    color: IFColors.text,
-  );
-
-  static const h1 = TextStyle(
-    fontSize: 26,
-    fontWeight: FontWeight.w900,
-    letterSpacing: -0.5,
-    color: IFColors.text,
-  );
-
-  static const h2 = TextStyle(
-    fontSize: 20,
-    fontWeight: FontWeight.w900,
-    color: IFColors.text,
-  );
-
-  static const h3 = TextStyle(
-    fontSize: 17,
-    fontWeight: FontWeight.w900,
-    color: IFColors.text,
-  );
-
-  static const cardTitle = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w800,
-    color: IFColors.text,
-  );
-
-  static const body = TextStyle(
-    fontSize: 14,
-    color: IFColors.text,
-  );
-
-  static const bodyMuted = TextStyle(
-    fontSize: 14,
-    color: IFColors.textMuted,
-  );
-
-  static const label = TextStyle(
-    fontSize: 11,
-    fontWeight: FontWeight.w700,
-    letterSpacing: 0.7,
-    color: IFColors.textMuted,
-  );
-
-  static const micro = TextStyle(
-    fontSize: 10,
-    fontWeight: FontWeight.w700,
-    letterSpacing: 0.6,
-    color: IFColors.textFaint,
-  );
-}
-```
-
-Règles typo :
-
-* Logo/AppBar : `FontWeight.w900`.
-* Titres principaux : 24–32 px.
-* Cards titles : 16–18 px.
-* Body : 13–15 px.
-* Labels : uppercase, 10–12 px, `w700`.
-* Éviter les textes gris trop clairs.
-* Tous les textes doivent rester lisibles sur fond noir.
-
----
-
-## 7. Logo, branding et app icon
-
-Créer ces dossiers et fichiers :
-
-```text
-assets/branding/
-  ironforge_logo_full.png
-  ironforge_logo_mark.png
-  ironforge_logo_mark_red.png
-  app_icon_1024.png
-  adaptive_icon_foreground.png
-  adaptive_icon_background.png
-```
-
-Style du logo :
-
-* Monogramme “IF” anguleux.
-* Rouge métallique.
-* Fond noir.
-* Look agressif.
-* Forme simple et lisible.
-* Pas de style cartoon.
-* Pas de couleurs pastel.
-* Pas d’haltère obligatoire dans le logo principal.
-* Le logo doit être lisible en petit format.
-
-Couleurs logo :
-
-```text
-Fond : #050505
-Rouge principal : #E52B2B
-Rouge ombre : #8E1212
-Highlight : #FF4A4A
-Texte : #F4F4F5
-```
-
-Ajouter plus tard si les assets sont prêts :
-
-```yaml
-dev_dependencies:
-  flutter_launcher_icons: ^0.14.3
-
-flutter_launcher_icons:
-  android: true
-  ios: true
-  image_path: "assets/branding/app_icon_1024.png"
-  adaptive_icon_background: "#050505"
-  adaptive_icon_foreground: "assets/branding/adaptive_icon_foreground.png"
-```
-
-Commande :
-
-```bash
-dart run flutter_launcher_icons
-```
-
-Ne jamais committer :
-
-* keystore ;
-* `.jks` ;
-* `android/key.properties` ;
-* `.env` ;
-* tokens ;
-* secrets.
-
----
-
-## 8. Icônes nécessaires
-
-Utiliser d’abord Material Icons.
-Ne pas bloquer le développement pour des SVG custom.
-
-Navigation principale :
-
-```text
-Home       Icons.home_rounded
-History    Icons.history_rounded
-Exercises  Icons.fitness_center_rounded
-Progress   Icons.bar_chart_rounded
-Programs   Icons.rocket_launch_rounded
-```
-
-Icônes UI :
-
-```text
-Start workout       Icons.play_arrow_rounded
-Streak              Icons.local_fire_department_rounded
-Best/PR             Icons.emoji_events_rounded
-Volume              Icons.scale_rounded
-Calories            Icons.local_fire_department_outlined
-Duration            Icons.timer_rounded
-Sets                Icons.check_circle_rounded
-Plate calculator    Icons.calculate_rounded
-Rest timer          Icons.timer_outlined
-Same as last        Icons.replay_rounded
-Smart suggestion    Icons.auto_awesome_rounded
-Search              Icons.search_rounded
-Filter              Icons.tune_rounded
-Favorite            Icons.star_rounded
-Favorite empty      Icons.star_border_rounded
-AI Coach            Icons.psychology_alt_rounded
-Recovery            Icons.monitor_heart_rounded
-Sleep               Icons.bedtime_rounded
-Warning/Insight     Icons.warning_amber_rounded
-Settings            Icons.settings_rounded
-Notes               Icons.notes_rounded
-Delete              Icons.delete_outline_rounded
-Edit                Icons.edit_rounded
-Add                 Icons.add_rounded
-Back                Icons.arrow_back_rounded
-More                Icons.more_vert_rounded
-```
-
-Equipment icons :
-
-```text
-Barbell     Icons.fitness_center_rounded
-Dumbbell    Icons.sports_gymnastics_rounded
-Machine     Icons.precision_manufacturing_rounded
-Cable       Icons.cable_rounded
-Bodyweight  Icons.accessibility_new_rounded
-```
-
----
-
-## 9. Images nécessaires
-
-Créer :
-
-```text
-assets/images/
-  athletes/
-  programs/
-  onboarding/
-  empty_states/
-  ai/
-```
-
-Images recommandées :
-
-```text
-assets/images/athletes/bodybuilder_bw.png
-assets/images/athletes/powerlifter_bw.png
-assets/images/programs/ppl.png
-assets/images/programs/strength_5x5.png
-assets/images/programs/upper_lower.png
-assets/images/programs/bro_split.png
-assets/images/ai/ai_core_hex.png
-assets/images/empty_states/no_workouts.png
-```
-
-Style images :
-
-* Noir et blanc.
-* Contraste fort.
-* Légère teinte rouge possible.
-* Pas d’images non licenciées de personnes réelles.
-* Si aucune image n’est disponible, utiliser gradients + icônes Material.
-* Ne pas casser l’app si une image manque.
-
-Créer des placeholders propres en Flutter si les assets ne sont pas encore disponibles.
-
----
-
-## 10. Mise à jour pubspec.yaml
-
-Ajouter seulement les dépendances utiles.
-
-```yaml
-dependencies:
-  percent_indicator: ^4.2.3
-  confetti: ^0.8.0
-```
-
-Optionnel pour launcher icons :
-
-```yaml
-dev_dependencies:
-  flutter_launcher_icons: ^0.14.3
-```
-
-Assets à déclarer :
-
-```yaml
-flutter:
-  uses-material-design: true
-  assets:
-    - assets/images/
-    - assets/images/athletes/
-    - assets/images/programs/
-    - assets/images/onboarding/
-    - assets/images/empty_states/
-    - assets/images/ai/
-    - assets/animations/
-    - assets/branding/
-```
+L’app est déjà offline-first avec Hive.
 
 Ne pas ajouter maintenant :
 
-* Firebase ;
-* RevenueCat ;
-* HealthKit ;
-* Google Fit ;
-* Strava ;
-* camera ;
-* location ;
-* microphone ;
-* contacts.
+* Firebase
+* RevenueCat
+* Cloud Sync
+* Login
+* Camera
+* Location
+* Health sensors
+* Microphone
+* Contacts
+* Permissions Android sensibles
+
+Ne pas casser :
+
+* Hive
+* repositories existants
+* providers existants
+* tests existants
+* package Android `com.ironforge.app`
+* routines locales
+* exercices custom
+* favoris
+* onboarding local
+* workout history local
+
+Le problème actuel n’est pas la logique.
+Le problème est que l’UI reste trop simple par rapport à la preview.
+
+Objectif : rendre l’app beaucoup plus professionnelle, dense, premium, proche visuellement de la preview IronForge rouge/noir.
 
 ---
 
-## 11. Design system à créer
+# STYLE VISUEL FINAL À ATTEINDRE
 
-Créer ou améliorer :
+L’app doit ressembler à la preview envoyée :
+
+* noir très profond ;
+* rouge IronForge dominant ;
+* cards compactes ;
+* bordures fines ;
+* layout dense mais lisible ;
+* style brutalist premium ;
+* look app commerciale prête pour App Store / Play Store ;
+* pas de grands espaces vides ;
+* pas de composants Flutter génériques visibles ;
+* pas de rendu “prototype” ;
+* pas de placeholders moches ;
+* pas de textes du type “placeholder” visibles dans l’app finale ;
+* pas de look simple “Material demo”.
+
+---
+
+# DESIGN TOKENS OBLIGATOIRES
+
+Utiliser partout :
+
+```dart
+IFColors.black       // background principal
+IFColors.panel       // cards
+IFColors.panel2      // inputs / secondary cards
+IFColors.panel3      // elevated dark surface
+IFColors.border      // borders visibles
+IFColors.borderSoft  // borders soft
+IFColors.red         // accent principal
+IFColors.redDark     // dark red
+IFColors.redGlow     // glow / danger
+IFColors.gold        // PR / trophy
+IFColors.green       // positive delta only
+IFColors.orange      // streak / fire
+IFColors.blue        // AI secondary
+IFColors.text        // main text
+IFColors.textMuted   // secondary text
+IFColors.textFaint   // very secondary text
+```
+
+Règles :
+
+* Rouge = action principale.
+* Gold = PR/records.
+* Green = progression positive uniquement.
+* Orange = streak/fire.
+* Blue = AI secondaire.
+* Aucun accent teal comme couleur principale.
+
+---
+
+# RÈGLES UX
+
+L’app doit être utilisable en salle de sport :
+
+* boutons larges ;
+* textes lisibles ;
+* logging rapide ;
+* maximum 1–2 taps pour logger un set ;
+* bottom navigation toujours accessible ;
+* pas de menus profonds inutiles ;
+* les cards doivent être compactes ;
+* les écrans doivent montrer beaucoup d’information utile sans être confus ;
+* les données réelles doivent venir de Hive quand possible ;
+* si la donnée n’existe pas, afficher un état propre, pas une fausse donnée.
+
+---
+
+# COMMANDES DE VALIDATION GÉNÉRALES
+
+À la fin de chaque phase importante :
+
+```bash
+flutter pub get
+flutter analyze
+flutter test
+```
+
+À la fin des phases UI complètes :
+
+```bash
+flutter build apk --debug
+```
+
+Ne pas ignorer les erreurs.
+Ne pas supprimer des tests pour faire passer le build.
+
+---
+
+# PLAN GLOBAL
+
+Le redesign doit être fait en 9 phases :
+
+1. Audit UI + design system premium
+2. Home dashboard premium
+3. Workout logger premium
+4. Rest timer + plate calculator
+5. History screen premium
+6. Progress overview premium
+7. Exercises library premium
+8. Programs/Routines premium + AI Coach
+9. Polish final + QA + screenshots readiness
+
+Chaque phase a un prompt séparé plus bas.
+
+---
+
+# PHASE 1 — Audit UI + Design System Premium
+
+## Objectif
+
+Créer une base visuelle vraiment professionnelle avant de toucher tous les écrans.
+
+Ne pas refaire les écrans complets dans cette phase.
+Seulement améliorer les fondations UI.
+
+## Fichiers à lire
+
+* `lib/src/core/app_theme.dart`
+* `lib/src/core/if_text_styles.dart`
+* `lib/src/shared/widgets/`
+* `lib/src/core/router.dart`
+* `pubspec.yaml`
+
+## Travail à faire
+
+### 1. Vérifier le thème
+
+S’assurer que :
+
+* `IFColors` existe ;
+* le rouge est la couleur principale ;
+* les anciens `forgeElectric`, `forgePanel`, etc. pointent vers la nouvelle palette ;
+* les boutons rouges sont bien premium ;
+* les cards ont une bordure fine ;
+* les inputs sont sombres ;
+* les snackbars sont sombres ;
+* le fond général est noir profond.
+
+### 2. Améliorer le design system
+
+Créer ou améliorer ces widgets :
 
 ```text
-lib/src/shared/widgets/
-  forge_shell.dart
-  forge_bottom_nav.dart
-  forge_card.dart
-  forge_metric_tile.dart
-  forge_primary_button.dart
-  forge_chip.dart
-  forge_section_header.dart
-  forge_empty_state.dart
-  forge_glow.dart
-  pr_celebration.dart
+lib/src/shared/widgets/forge_card.dart
+lib/src/shared/widgets/forge_bottom_nav.dart
+lib/src/shared/widgets/forge_shell.dart
+lib/src/shared/widgets/forge_primary_button.dart
+lib/src/shared/widgets/forge_metric_tile.dart
+lib/src/shared/widgets/forge_chip.dart
+lib/src/shared/widgets/forge_section_header.dart
+lib/src/shared/widgets/forge_empty_state.dart
+lib/src/shared/widgets/forge_progress_ring.dart
+lib/src/shared/widgets/forge_glass_panel.dart
+lib/src/shared/widgets/forge_action_tile.dart
+lib/src/shared/widgets/forge_screen_background.dart
 ```
 
-### ForgeCard
+### 3. Créer `ForgeScreenBackground`
 
-Créer :
+Il doit ajouter :
 
-`lib/src/shared/widgets/forge_card.dart`
+* fond noir ;
+* très léger gradient rouge sombre en haut ;
+* pas trop visible ;
+* pas de look flashy.
+
+### 4. Créer `ForgeProgressRing`
+
+Utilisé plus tard pour :
+
+* rest timer ;
+* recovery ;
+* circular stats.
+
+Il doit accepter :
 
 ```dart
-import 'package:flutter/material.dart';
-
-import '../../core/app_theme.dart';
-
-class ForgeCard extends StatelessWidget {
-  const ForgeCard({
-    super.key,
-    required this.child,
-    this.padding = const EdgeInsets.all(14),
-    this.borderColor,
-    this.glow = false,
-    this.onTap,
-  });
-
-  final Widget child;
-  final EdgeInsets padding;
-  final Color? borderColor;
-  final bool glow;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final content = Container(
-      decoration: BoxDecoration(
-        color: IFColors.panel,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: borderColor ?? IFColors.borderSoft),
-        boxShadow: glow
-            ? [
-                BoxShadow(
-                  color: IFColors.red.withValues(alpha: 0.22),
-                  blurRadius: 22,
-                  spreadRadius: -10,
-                ),
-              ]
-            : null,
-      ),
-      child: Padding(
-        padding: padding,
-        child: child,
-      ),
-    );
-
-    if (onTap == null) return content;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(14),
-      onTap: onTap,
-      child: content,
-    );
-  }
-}
+value
+size
+strokeWidth
+center
+color
+backgroundColor
 ```
 
-### ForgeMetricTile
+### 5. Améliorer `ForgeCard`
 
-Créer :
+La card doit avoir :
 
-`lib/src/shared/widgets/forge_metric_tile.dart`
+* radius 14–18 ;
+* border `IFColors.borderSoft` ;
+* fond `IFColors.panel` ;
+* padding configurable ;
+* option glow rouge ;
+* option selected ;
+* option onTap.
 
-```dart
-import 'package:flutter/material.dart';
+### 6. Améliorer Bottom Nav
 
-import '../../core/app_theme.dart';
-import '../../core/if_text_styles.dart';
-import 'forge_card.dart';
+La bottom navigation doit ressembler à la preview :
 
-class ForgeMetricTile extends StatelessWidget {
-  const ForgeMetricTile({
-    super.key,
-    required this.label,
-    required this.value,
-    this.delta,
-    this.icon,
-    this.iconColor,
-  });
+* noire ;
+* bordure top ;
+* icônes compactes ;
+* item actif rouge ;
+* labels petits ;
+* pas d’indicator Material trop gros si ça fait amateur.
 
-  final String label;
-  final String value;
-  final String? delta;
-  final IconData? icon;
-  final Color? iconColor;
+Si `NavigationBar` fait trop générique, créer une custom bottom nav avec `Container`, `Row`, `InkWell`.
 
-  @override
-  Widget build(BuildContext context) {
-    return ForgeCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (icon != null)
-            Icon(
-              icon,
-              color: iconColor ?? IFColors.red,
-              size: 18,
-            ),
-          if (icon != null) const SizedBox(height: 8),
-          Text(label.toUpperCase(), style: IFText.micro),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 21,
-              fontWeight: FontWeight.w900,
-              color: IFColors.text,
-            ),
-          ),
-          if (delta != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              delta!,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: IFColors.green,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-```
-
-### ForgeChip
-
-Créer :
-
-`lib/src/shared/widgets/forge_chip.dart`
-
-```dart
-import 'package:flutter/material.dart';
-
-import '../../core/app_theme.dart';
-
-class ForgeChip extends StatelessWidget {
-  const ForgeChip({
-    super.key,
-    required this.label,
-    this.selected = false,
-    this.icon,
-    this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final IconData? icon;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = selected ? IFColors.red : IFColors.panel2;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(999),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? IFColors.red : IFColors.panel2,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: selected ? IFColors.red : IFColors.border,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 14, color: selected ? Colors.white : IFColors.textMuted),
-              const SizedBox(width: 6),
-            ],
-            Text(
-              label,
-              style: TextStyle(
-                color: selected ? Colors.white : IFColors.textMuted,
-                fontWeight: FontWeight.w800,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-```
-
-### ForgeSectionHeader
-
-Créer :
-
-`lib/src/shared/widgets/forge_section_header.dart`
-
-```dart
-import 'package:flutter/material.dart';
-
-import '../../core/app_theme.dart';
-
-class ForgeSectionHeader extends StatelessWidget {
-  const ForgeSectionHeader({
-    super.key,
-    required this.title,
-    this.action,
-    this.onActionTap,
-  });
-
-  final String title;
-  final String? action;
-  final VoidCallback? onActionTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: IFColors.text,
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        const Spacer(),
-        if (action != null)
-          TextButton(
-            onPressed: onActionTap,
-            child: Text(action!),
-          ),
-      ],
-    );
-  }
-}
-```
-
-### ForgeEmptyState
-
-Créer :
-
-`lib/src/shared/widgets/forge_empty_state.dart`
-
-```dart
-import 'package:flutter/material.dart';
-
-import '../../core/app_theme.dart';
-import '../../core/if_text_styles.dart';
-
-class ForgeEmptyState extends StatelessWidget {
-  const ForgeEmptyState({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.message,
-    this.action,
-  });
-
-  final IconData icon;
-  final String title;
-  final String message;
-  final Widget? action;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 54, color: IFColors.red),
-            const SizedBox(height: 16),
-            Text(title, style: IFText.h2, textAlign: TextAlign.center),
-            const SizedBox(height: 8),
-            Text(message, style: IFText.bodyMuted, textAlign: TextAlign.center),
-            if (action != null) ...[
-              const SizedBox(height: 20),
-              action!,
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-```
-
----
-
-## 12. Shell et bottom navigation
-
-Le `ForgeShell` actuel est trop simple.
-Il doit gérer :
-
-* AppBar premium ;
-* body ;
-* SafeArea ;
-* bottom navigation persistante ;
-* route active ;
-* bouton retour sur écrans secondaires ;
-* fond noir.
-
-Créer :
-
-`lib/src/shared/widgets/forge_bottom_nav.dart`
-
-```dart
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-
-import '../../core/app_theme.dart';
-
-class ForgeBottomNav extends StatelessWidget {
-  const ForgeBottomNav({super.key});
-
-  int _indexForPath(String path) {
-    if (path.startsWith('/history')) return 1;
-    if (path.startsWith('/exercises')) return 2;
-    if (path.startsWith('/progress')) return 3;
-    if (path.startsWith('/routines')) return 4;
-    return 0;
-  }
-
-  void _go(BuildContext context, int index) {
-    final routes = ['/', '/history', '/exercises', '/progress', '/routines'];
-    context.go(routes[index]);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final path = GoRouterState.of(context).uri.path;
-    final selectedIndex = _indexForPath(path);
-
-    return Container(
-      decoration: const BoxDecoration(
-        color: IFColors.black,
-        border: Border(
-          top: BorderSide(color: IFColors.borderSoft),
-        ),
-      ),
-      child: NavigationBar(
-        selectedIndex: selectedIndex,
-        onDestinationSelected: (index) => _go(context, index),
-        backgroundColor: IFColors.black,
-        indicatorColor: IFColors.red,
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_rounded),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.history_rounded),
-            label: 'History',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.fitness_center_rounded),
-            label: 'Exercises',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.bar_chart_rounded),
-            label: 'Progress',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.rocket_launch_rounded),
-            label: 'Programs',
-          ),
-        ],
-      ),
-    );
-  }
-}
-```
-
-Mettre à jour :
-
-`lib/src/shared/widgets/forge_shell.dart`
-
-```dart
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-
-import '../../core/app_theme.dart';
-import 'forge_bottom_nav.dart';
-
-class ForgeShell extends StatelessWidget {
-  const ForgeShell({
-    required this.title,
-    required this.child,
-    this.actions,
-    this.showBottomNav = true,
-    super.key,
-  });
-
-  final String title;
-  final Widget child;
-  final List<Widget>? actions;
-  final bool showBottomNav;
-
-  bool _canGoBack(String path) {
-    return path != '/' &&
-        path != '/history' &&
-        path != '/exercises' &&
-        path != '/progress' &&
-        path != '/routines';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final path = GoRouterState.of(context).uri.path;
-
-    return Scaffold(
-      backgroundColor: IFColors.black,
-      appBar: AppBar(
-        title: Text(title),
-        leading: _canGoBack(path)
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back_rounded),
-                onPressed: () => context.go('/'),
-              )
-            : null,
-        actions: actions,
-      ),
-      body: SafeArea(
-        bottom: false,
-        child: child,
-      ),
-      bottomNavigationBar: showBottomNav ? const ForgeBottomNav() : null,
-    );
-  }
-}
-```
-
----
-
-## 13. Router
-
-Mettre à jour :
-
-`lib/src/core/router.dart`
-
-Routes attendues :
-
-```dart
-import 'package:go_router/go_router.dart';
-
-import '../features/ai_coach/presentation/ai_coach_screen.dart';
-import '../features/exercises/presentation/exercise_library_screen.dart';
-import '../features/onboarding/presentation/onboarding_screen.dart';
-import '../features/premium/presentation/premium_screen.dart';
-import '../features/progress/presentation/progress_screen.dart';
-import '../features/routines/presentation/routines_screen.dart';
-import '../features/workout_logger/presentation/history_screen.dart';
-import '../features/workout_logger/presentation/home_screen.dart';
-import '../features/workout_logger/presentation/plate_calculator_screen.dart';
-import '../features/workout_logger/presentation/rest_timer_screen.dart';
-import '../features/workout_logger/presentation/workout_logger_screen.dart';
-
-final appRouter = GoRouter(
-  initialLocation: '/',
-  routes: [
-    GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
-    GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
-    GoRoute(path: '/workout', builder: (_, __) => const WorkoutLoggerScreen()),
-    GoRoute(path: '/history', builder: (_, __) => const HistoryScreen()),
-    GoRoute(path: '/progress', builder: (_, __) => const ProgressScreen()),
-    GoRoute(path: '/exercises', builder: (_, __) => const ExerciseLibraryScreen()),
-    GoRoute(path: '/routines', builder: (_, __) => const RoutinesScreen()),
-    GoRoute(path: '/premium', builder: (_, __) => const PremiumScreen()),
-    GoRoute(path: '/ai-coach', builder: (_, __) => const AiCoachScreen()),
-    GoRoute(path: '/rest-timer', builder: (_, __) => const RestTimerScreen()),
-    GoRoute(path: '/plate-calculator', builder: (_, __) => const PlateCalculatorScreen()),
-  ],
-);
-```
-
-Si certains imports cassent parce que les fichiers n’existent pas encore, créer les fichiers correspondants.
-
----
-
-## 14. Home Dashboard cible
-
-Le Home actuel est fonctionnel mais trop simple.
-Il doit ressembler au premier téléphone de la preview.
-
-Fichier à modifier :
-
-`lib/src/features/workout_logger/presentation/home_screen.dart`
-
-Contenu cible :
-
-* Header :
-
-  * `Yo, Iron Titan 💪`
-  * `Let's crush today.`
-  * notification icon
-* Streak card :
-
-  * `Workout Streak`
-  * nombre de jours
-  * fire emojis
-  * `Best: 28 days` ou valeur calculée si disponible
-* Quote card :
-
-  * citation courte agressive
-  * silhouette optionnelle
-* Gros bouton rouge :
-
-  * `START WORKOUT`
-* Today’s Plan :
-
-  * nom routine ou placeholder
-  * nombre d’exercices
-  * badge programme
-* Stat grid :
-
-  * Volume
-  * Workouts
-  * Sets
-  * Best Bench ou Best E1RM
-
-Ne pas inventer de données trompeuses :
-
-* Si pas d’historique, afficher `0`.
-* Si pas de durée dans le modèle, ne pas afficher une vraie duration.
-* Si pas de calories, ne pas afficher de calories réelles.
-* Les placeholders doivent être clairs.
-
-Structure UI recommandée :
+Items :
 
 ```text
-ListView
-  Header row
-  Hero title
-  Streak card
-  Quote card
-  Start Workout button
-  Today's Plan section
-  Metrics grid
-  Quick actions
+Home
+History
+Exercises
+Progress
+Programs
 ```
 
-Quick actions :
+### 7. Assets folders
+
+Créer si manquants :
+
+```text
+assets/branding/
+assets/images/athletes/
+assets/images/programs/
+assets/images/ai/
+assets/images/empty_states/
+```
+
+Ne pas ajouter d’images lourdes non nécessaires.
+Créer uniquement `.gitkeep` si besoin.
+
+## Ne pas faire dans cette phase
+
+* Ne pas redesign Home complet.
+* Ne pas redesign Workout complet.
+* Ne pas ajouter Firebase.
+* Ne pas ajouter RevenueCat.
+* Ne pas modifier la logique Hive.
+
+## Validation
+
+Lancer :
+
+```bash
+flutter pub get
+flutter analyze
+flutter test
+```
+
+## Commit
+
+```bash
+git add .
+git commit -m "Polish IronForge design system foundation"
+```
+
+## Stop
+
+Après le commit, s’arrêter.
+
+---
+
+# PROMPT À DONNER À CODEX POUR LA PHASE 1
+
+```text
+PHASE 1 ONLY.
+
+Lis `IRONFORGE_CODEX_REDESIGN_INSTRUCTIONS.md`, puis ce plan de phases. Travaille uniquement sur la Phase 1 : Audit UI + Design System Premium.
+
+Objectif : améliorer les fondations UI pour que l’app puisse vraiment ressembler à la preview IronForge rouge/noir. Ne redesign pas encore tous les écrans. Crée/améliore les widgets shared premium : ForgeCard, ForgeBottomNav, ForgeShell, ForgePrimaryButton, ForgeMetricTile, ForgeChip, ForgeSectionHeader, ForgeEmptyState, ForgeProgressRing, ForgeGlassPanel, ForgeActionTile, ForgeScreenBackground.
+
+Respecte l’existant : Hive, providers, repositories, routes, tests, package `com.ironforge.app`. N’ajoute pas Firebase ni RevenueCat.
+
+À la fin, lance `flutter pub get`, `flutter analyze`, `flutter test`. Corrige les erreurs. Fais un commit `Polish IronForge design system foundation`. Puis arrête-toi.
+```
+
+---
+
+# PHASE 2 — Home Dashboard Premium
+
+## Objectif
+
+Transformer le Home en écran premium proche du premier téléphone de la preview.
+
+Le Home actuel est trop simple.
+Il doit devenir un vrai dashboard commercial.
+
+## Fichiers à lire
+
+* `lib/src/features/workout_logger/presentation/home_screen.dart`
+* `lib/src/shared/widgets/`
+* `lib/src/core/app_theme.dart`
+* `lib/src/core/if_text_styles.dart`
+* `lib/src/features/workout_logger/data/workout_repository.dart`
+* `lib/src/features/progress/domain/progress_stats.dart`
+* `lib/src/features/onboarding/data/user_profile_repository.dart`
+
+## Travail à faire
+
+### 1. Header premium
+
+Créer un haut d’écran :
+
+```text
+Yo, Iron Titan 💪
+Let's crush today.
+```
+
+À droite :
+
+* notification icon ;
+* ou settings icon ;
+* card carrée sombre.
+
+Le header doit être compact et premium.
+
+### 2. Hero streak card
+
+Créer une card comme la preview :
+
+```text
+Workout Streak
+12 days
+🔥🔥🔥🔥🔥
+Best: 28 days
+```
+
+Mais :
+
+* `12 days` doit venir du calcul réel si possible ;
+* si aucune séance : `0 days` ;
+* ne pas afficher le mot `placeholder`.
+
+Style :
+
+* fond panel ;
+* glow rouge subtil ;
+* fire icon orange ;
+* texte dense ;
+* best streak si calculable, sinon “Best: —”.
+
+### 3. Quote card
+
+Créer une quote card premium :
+
+```text
+Discipline is choosing between what you want now and what you want most.
+```
+
+À droite :
+
+* silhouette athlete si asset disponible ;
+* sinon icône fitness dans cercle rouge sombre.
+
+Aucun placeholder visible.
+
+### 4. Bouton Start Workout
+
+Bouton rouge pleine largeur :
+
+```text
+START WORKOUT
+```
+
+Avec icône play.
+Il doit aller vers `/workout`.
+
+### 5. Today's Plan
+
+Card :
+
+```text
+Today's Plan
+Push Day
+5 Exercises
+PPL
+```
+
+Si aucune routine réelle :
+
+* afficher une suggestion propre ;
+* pas de texte placeholder ;
+* CTA vers Programs.
+
+### 6. Metrics compactes
+
+Grid 2x2 ou 3 cards selon écran :
+
+```text
+Volume
+Workouts
+Sets
+Best Bench
+```
+
+Données réelles depuis Hive/ProgressStats.
+
+### 7. Quick actions
+
+Cards compactes :
 
 ```text
 Progress
@@ -1141,644 +498,1014 @@ Programs
 AI Coach
 ```
 
-Le bouton START WORKOUT doit aller vers `/workout`.
+Chaque card doit ressembler à un bouton premium.
+
+## Détails visuels
+
+* Padding page : 16.
+* Espacement vertical : 10–16.
+* Cards radius : 14–18.
+* Header hero pas trop grand.
+* Il faut voir plusieurs sections sans trop scroller.
+* Ne pas faire un écran vide avec juste 4 cards.
+
+## Ne pas faire
+
+* Ne pas afficher `placeholder`.
+* Ne pas inventer de calories si pas calculées.
+* Ne pas ajouter de backend.
+
+## Validation
+
+```bash
+flutter analyze
+flutter test
+```
+
+Tester visuellement :
+
+```bash
+flutter run
+```
+
+## Commit
+
+```bash
+git add .
+git commit -m "Upgrade home dashboard to premium IronForge layout"
+```
+
+## Stop
+
+Après le commit, s’arrêter.
 
 ---
 
-## 15. Workout Logger cible
+# PROMPT À DONNER À CODEX POUR LA PHASE 2
 
-Le workout logger actuel contient déjà beaucoup de logique.
-Ne pas supprimer cette logique.
+```text
+PHASE 2 ONLY.
 
-Fichier principal :
+Travaille uniquement sur le Home Dashboard Premium. Le Home actuel reste trop simple par rapport à la preview. Transforme `home_screen.dart` en vrai dashboard premium IronForge : header “Yo, Iron Titan / Let’s crush today”, streak card, quote card, gros bouton START WORKOUT, Today’s Plan, metrics réelles depuis Hive/ProgressStats, quick actions.
 
-`lib/src/features/workout_logger/presentation/workout_logger_screen.dart`
+Utilise uniquement les composants du design system déjà créés. Ne touche pas au workout logger, progress, exercises ou routines sauf si un import est nécessaire. Aucun texte “placeholder” visible dans l’app. Pas de Firebase, pas de RevenueCat.
 
-Garder :
+À la fin, lance `flutter analyze` et `flutter test`. Corrige les erreurs. Fais un commit `Upgrade home dashboard to premium IronForge layout`. Puis arrête-toi.
+```
 
-* `workoutControllerProvider`
-* `addExercise`
-* `addSameAsLastSet`
-* `addSmartSet`
-* `addSet`
-* `updateSet`
-* `deleteSet`
-* `updateExerciseNotes`
-* PR detection
-* haptic feedback
-* sound feedback
-* kg/lbs
-* rest timer local
-* plate calculator logic
+---
 
-Améliorer le rendu pour viser la preview “Bench Press”.
+# PHASE 3 — Workout Logger Premium
 
-### Header
+## Objectif
 
-Afficher :
+Transformer le workout logger en écran professionnel proche du téléphone “Bench Press” de la preview.
+
+C’est l’écran le plus important de l’app.
+
+## Fichiers à lire
+
+* `lib/src/features/workout_logger/presentation/workout_logger_screen.dart`
+* `lib/src/features/workout_logger/presentation/workout_controller.dart`
+* `lib/src/features/workout_logger/domain/workout.dart`
+* `lib/src/features/workout_logger/domain/workout_math.dart`
+* `lib/src/features/exercises/data/exercise_repository.dart`
+* `lib/src/shared/widgets/`
+
+## Règle absolue
+
+Ne pas casser la logique actuelle :
+
+* add exercise ;
+* add set ;
+* same as last ;
+* smart set ;
+* kg/lbs ;
+* notes ;
+* edit set ;
+* delete set ;
+* rest timer ;
+* PR detection ;
+* haptic ;
+* sound ;
+* finish workout.
+
+## Travail à faire
+
+### 1. Header workout
+
+Créer un header dense :
 
 ```text
 Live Workout
-ou nom de l’exercice principal
+ou
+Bench Press
 ```
 
-Sous le titre, afficher des chips :
+Avec :
 
-```text
-Barbell
-Chest
-Compound
-```
+* back button ;
+* menu three dots ;
+* timer global si disponible ;
+* nombre de sets ;
+* volume total.
 
-Si l’exercice n’a pas ces infos, utiliser les infos disponibles dans le modèle Exercise.
+### 2. Exercise picker premium
 
-### Exercise picker
+Le dropdown actuel fait trop simple.
 
-Remplacer le dropdown brut par :
+Le remplacer ou l’améliorer :
 
-* search field ou bottom sheet ;
-* bouton `+ Add Exercise` ;
-* liste rapide d’exercices ;
-* style sombre.
+* champ sombre ;
+* icône search ;
+* bouton add ;
+* bottom sheet search si possible ;
+* liste rapide d’exercices.
 
-Si trop long, garder DropdownButtonFormField mais le rendre visuellement premium.
+Objectif : ajouter un exercice rapidement sans look prototype.
 
-### Exercise Card
+### 3. Exercise card premium
 
-Chaque exercice doit afficher :
+Chaque exercice doit ressembler à la preview :
 
 * nom exercice ;
-* rest timer ;
-* notes ;
-* sets existants ;
-* boutons Same last / Smart + / Log ;
-* Plate Calculator.
+* chips :
 
-### Working Sets
+  * équipement ;
+  * muscle ;
+  * type ;
+* section sets ;
+* section notes compacte ;
+* actions.
 
-Afficher une table compacte :
+### 4. Table sets
+
+Afficher les sets sous forme dense :
 
 ```text
-SET | KG/LBS | REPS | RPE | DONE
-1   | 100    | 8    | 8   | check
-2   | 100    | 8    | 9   | check
-3   | 102.5  | 6    | 9   | circle
+SET   KG   REPS   RPE   ✓
+1     100  8      8     ✓
+2     100  8      9     ✓
+3     102.5 6     9     ○
 ```
 
-Les PR doivent avoir :
+Style :
 
-* bordure gold ;
-* trophy icon ;
-* texte `PR`.
+* rows sombres ;
+* border fine ;
+* check rouge ;
+* PR = bordure gold + trophy.
 
-### Actions
+### 5. Inputs rapides
 
-Boutons :
+La zone de logging doit être compacte :
 
 ```text
-SAME AS LAST TIME
-SMART +
+Weight | Reps | RPE
+```
+
+Puis boutons :
+
+```text
+Same as last
+Smart +
 LOG SET
-+ ADD SET
-PLATE CALCULATOR
 ```
 
-`LOG SET` doit être rouge.
+`LOG SET` rouge.
 
-### Rest Timer compact
+### 6. Actions secondaires
 
-En bas de chaque exercise card ou dans un sticky area :
+Ajouter :
 
 ```text
-REST TIMER
-2:30
-circular progress
-pause button
++ Add Set
+Plate Calculator
+Rest Timer
 ```
 
-### PR Feedback
+Ces actions doivent ouvrir les écrans/bottom sheets si disponibles.
 
-Quand `controller.isPr(...)` retourne true au moment du log :
+### 7. PR Celebration
+
+Quand PR détecté :
 
 * haptic lourd ;
-* dialog ou snackbar ;
-* texte : `PR FORGED`;
-* icône trophée gold ;
-* message : `New estimated max. Keep pushing.`
+* dialog premium ;
+* gold trophy ;
+* texte `PR FORGED`;
+* ne pas se répéter au rebuild.
 
-Ne pas afficher un dialog PR sur chaque rebuild.
+### 8. Finish Workout
 
----
-
-## 16. Rest Timer plein écran
-
-Créer :
-
-`lib/src/features/workout_logger/presentation/rest_timer_screen.dart`
-
-Design cible :
-
-* Fond noir.
-* Titre `Rest Timer`.
-* Grand cercle rouge.
-* Texte :
-
-  * `RESTING`
-  * `1:42`
-  * `UP NEXT`
-  * `Bench Press`
-  * `Set 3 of 4`
-* Boutons :
-
-  * `-15s`
-  * pause/play rouge
-  * `+15s`
-* Settings :
-
-  * vibration on/off
-  * sound beep/chime/off
-
-Implémentation simple acceptée :
-
-* StatefulWidget local.
-* Timer Dart.
-* CircularProgressIndicator custom.
-* Pas besoin de notification background pour cette phase.
-
----
-
-## 17. Plate Calculator plein écran
-
-Créer :
-
-`lib/src/features/workout_logger/presentation/plate_calculator_screen.dart`
-
-Design cible :
-
-* Toggle KG/LBS.
-* Total weight grand :
-
-  * `102.5 kg`
-* Visuel barre simplifié avec disques.
-* Liste plates :
-
-  * `20 kg — 2 plates`
-  * `15 kg — 2 plates`
-  * `10 kg — 2 plates`
-  * `2.5 kg — 2 plates`
-  * `Bar — 20 kg`
-* Total en rouge.
-
-Si aucun dessin complexe :
-
-* Utiliser Row + Containers colorés pour simuler les plates.
-* Ne pas ajouter d’asset obligatoire.
-
-Le bouton depuis Workout Logger doit ouvrir cet écran ou un bottom sheet.
-
----
-
-## 18. History Screen
-
-Créer :
-
-`lib/src/features/workout_logger/presentation/history_screen.dart`
-
-Route :
+Bouton clair :
 
 ```text
-/history
+FINISH
 ```
 
-Design cible :
+Visible dans header ou bottom sticky area.
 
-* AppBar `History`
-* Icône filtre
-* Tabs :
+Après finish :
 
-  * All
-  * Workouts
-  * PRs
-  * Notes
-* Liste par date :
+* sauvegarde Hive ;
+* snackbar premium ;
+* retour home ou summary simple.
 
-  * `May 18, 2024`
-  * `Push Day`
-  * duration si disponible
-  * volume
-  * exercises
-* Chaque exercice en ligne :
+## Détails visuels
 
-  * nom
-  * nombre de sets
-  * meilleur poids ou bodyweight
-  * chevron
+* Dense comme preview.
+* Ne pas mettre de cards énormes.
+* Boutons larges mais compacts.
+* Inputs faciles à toucher.
+* Beaucoup d’info utile visible.
+* Pas de composant Material brut.
 
-Utiliser :
+## Validation
 
-```dart
-workoutHistoryProvider
+```bash
+flutter analyze
+flutter test
+flutter build apk --debug
 ```
 
-État vide :
+## Commit
+
+```bash
+git add .
+git commit -m "Upgrade workout logger to premium set tracking UI"
+```
+
+## Stop
+
+Après le commit, s’arrêter.
+
+---
+
+# PROMPT À DONNER À CODEX POUR LA PHASE 3
+
+```text
+PHASE 3 ONLY.
+
+Travaille uniquement sur le Workout Logger Premium. C’est l’écran le plus important. Redesign `workout_logger_screen.dart` pour qu’il ressemble au téléphone “Bench Press” de la preview : header dense, chips équipement/muscle/type, table de sets compacte, inputs weight/reps/RPE, boutons Same as last, Smart +, LOG SET rouge, Plate Calculator, Rest Timer, PR celebration, Finish clair.
+
+Ne casse aucune logique existante : Hive, workoutControllerProvider, addSet, addSameAsLastSet, addSmartSet, updateSet, deleteSet, notes, kg/lbs, PR detection, haptics, sound, finish workout.
+
+Ne touche pas aux autres écrans sauf si nécessaire pour import/shared widgets. Pas de Firebase, pas de RevenueCat.
+
+À la fin, lance `flutter analyze`, `flutter test`, `flutter build apk --debug`. Corrige les erreurs. Fais un commit `Upgrade workout logger to premium set tracking UI`. Puis arrête-toi.
+```
+
+---
+
+# PHASE 4 — Rest Timer + Plate Calculator
+
+## Objectif
+
+Créer deux écrans premium proches de la preview :
+
+1. Rest Timer circulaire
+2. Plate Calculator visuel
+
+## Fichiers à lire
+
+* `lib/src/features/workout_logger/presentation/rest_timer_screen.dart`
+* `lib/src/features/workout_logger/presentation/plate_calculator_screen.dart`
+* `lib/src/features/workout_logger/domain/workout_math.dart`
+* `lib/src/core/router.dart`
+* `lib/src/shared/widgets/`
+
+## Travail Rest Timer
+
+Créer un écran comme la preview :
+
+```text
+Rest Timer
+RESTING
+1:42
+UP NEXT
+Bench Press
+Set 3 of 4
+```
+
+UI :
+
+* grand cercle rouge ;
+* progress ring ;
+* bouton pause/play rouge ;
+* bouton `-15s` ;
+* bouton `+15s` ;
+* rows :
+
+  * Vibration ON
+  * Sound BEEP
+
+Le timer peut rester local.
+Pas besoin de background notifications.
+
+## Travail Plate Calculator
+
+Créer un écran comme la preview :
+
+```text
+Plate Calculator
+KG | LBS
+102.5 kg
+Total Weight
+```
+
+UI :
+
+* toggle kg/lbs ;
+* poids total très visible ;
+* visual barbell avec disques colorés ;
+* liste de plates ;
+* total en rouge.
+
+Exemple :
+
+```text
+20 kg     2 plates
+15 kg     2 plates
+10 kg     2 plates
+2.5 kg    2 plates
+Bar       20 kg
+TOTAL     102.5 kg
+```
+
+Si aucune image de barre :
+
+* utiliser des `Container` rectangles/cylindres ;
+* couleurs plates :
+
+  * red
+  * blue
+  * yellow
+  * green
+  * grey.
+
+## Connexion avec Workout Logger
+
+Depuis Workout Logger :
+
+* bouton Rest Timer ouvre `/rest-timer` ou bottom sheet ;
+* bouton Plate Calculator ouvre `/plate-calculator` ou bottom sheet.
+
+## Validation
+
+```bash
+flutter analyze
+flutter test
+```
+
+## Commit
+
+```bash
+git add .
+git commit -m "Add premium rest timer and plate calculator screens"
+```
+
+## Stop
+
+Après le commit, s’arrêter.
+
+---
+
+# PROMPT À DONNER À CODEX POUR LA PHASE 4
+
+```text
+PHASE 4 ONLY.
+
+Travaille uniquement sur Rest Timer + Plate Calculator. Crée/améliore `rest_timer_screen.dart` et `plate_calculator_screen.dart` pour qu’ils ressemblent à la preview : grand cercle rouge pour le timer, -15s/pause/+15s, vibration/sound rows ; calculateur de plaques avec toggle KG/LBS, poids total grand, visual barbell, liste de plates, total rouge.
+
+Branche les boutons depuis le workout logger si nécessaire, mais ne redesign pas le workout logger complet. Pas de notifications background, pas de permissions sensibles.
+
+À la fin, lance `flutter analyze` et `flutter test`. Corrige les erreurs. Fais un commit `Add premium rest timer and plate calculator screens`. Puis arrête-toi.
+```
+
+---
+
+# PHASE 5 — History Screen Premium
+
+## Objectif
+
+Créer ou améliorer un écran History proche de la preview.
+
+## Fichiers à lire
+
+* `lib/src/features/workout_logger/presentation/history_screen.dart`
+* `lib/src/features/workout_logger/data/workout_repository.dart`
+* `lib/src/features/workout_logger/domain/workout.dart`
+* `lib/src/core/router.dart`
+* `lib/src/shared/widgets/`
+
+## Travail à faire
+
+### 1. Header
+
+```text
+History
+```
+
+Avec :
+
+* filter icon ;
+* tabs.
+
+### 2. Tabs
+
+```text
+All
+Workouts
+PRs
+Notes
+```
+
+Le filtrage peut être simple.
+Mais l’UI doit être présente.
+
+### 3. Liste par date
+
+Chaque groupe :
+
+```text
+May 18, 2024
+Push Day
+```
+
+Card workout :
+
+* nom séance ;
+* date ;
+* volume ;
+* nombre exercices ;
+* nombre sets ;
+* duration si disponible.
+
+### 4. Exercise rows
+
+Sous chaque séance :
+
+```text
+Bench Press        102.5 kg
+Incline Dumbbell   40 kg
+Overhead Press     60 kg
+```
+
+Si pas de meilleur poids, afficher :
+
+```text
+Bodyweight
+```
+
+ou `—`.
+
+### 5. Empty state
+
+Si aucune séance :
 
 ```text
 No workouts yet.
 Start your first session and forge your baseline.
-```
-
-Bouton :
-
-```text
 START WORKOUT
 ```
 
+## Validation
+
+```bash
+flutter analyze
+flutter test
+```
+
+## Commit
+
+```bash
+git add .
+git commit -m "Build premium workout history screen"
+```
+
+## Stop
+
+Après le commit, s’arrêter.
+
 ---
 
-## 19. Progress Overview cible
+# PROMPT À DONNER À CODEX POUR LA PHASE 5
 
-Fichier :
+```text
+PHASE 5 ONLY.
 
-`lib/src/features/progress/presentation/progress_screen.dart`
+Travaille uniquement sur l’écran History. Crée/améliore `history_screen.dart` pour qu’il ressemble à la preview : header, filtre, tabs All/Workouts/PRs/Notes, groupes par date, workout cards compactes, rows d’exercices avec meilleur poids, empty state premium. Utilise `workoutHistoryProvider` et les données Hive réelles.
 
-L’écran actuel est fonctionnel mais minimal.
-Le rendre proche de la preview.
+Ne touche pas au workout logger, Home, Progress ou Exercises sauf import nécessaire. Pas de Firebase, pas de RevenueCat.
 
-À ajouter :
+À la fin, lance `flutter analyze` et `flutter test`. Corrige les erreurs. Fais un commit `Build premium workout history screen`. Puis arrête-toi.
+```
 
-* Tabs :
+---
 
-  * `7D`
-  * `4W`
-  * `3M`
-  * `1Y`
-  * `ALL`
-* Metric principale :
+# PHASE 6 — Progress Overview Premium
 
-  * `Bench Press`
-  * `1RM Estimate`
-  * `122.5 kg` ou valeur réelle si disponible
-  * delta si calculable
-* Chart rouge via `fl_chart`.
-* Cards :
+## Objectif
 
-  * Total Volume
-  * Total Workouts
-  * PRs
-  * Completed Sets
+Transformer Progress en écran premium proche de la preview.
+
+## Fichiers à lire
+
+* `lib/src/features/progress/presentation/progress_screen.dart`
+* `lib/src/features/progress/domain/progress_stats.dart`
+* `lib/src/features/workout_logger/data/workout_repository.dart`
+* `lib/src/shared/widgets/`
+
+## Travail à faire
+
+### 1. Header
+
+```text
+Progress Overview
+```
+
+### 2. Period tabs
+
+```text
+7D
+4W
+3M
+1Y
+ALL
+```
+
+Le filtre doit fonctionner au moins basiquement.
+Si trop complexe, commencer par changer l’affichage selon période avec sessions filtrées par date.
+
+### 3. Main strength card
+
+Créer une card :
+
+```text
+Bench Press
+1RM Estimate
+122.5 kg
++5.2 kg from last month
+```
+
+Données :
+
+* utiliser `ProgressStats.bestE1rmFor('bench_press')` si disponible ;
+* delta seulement si calculable ;
+* sinon afficher `—`.
+
+### 4. Chart rouge
+
+Utiliser `fl_chart`.
+
+Style :
+
+* fond panel ;
+* ligne rouge ;
+* dots rouges ;
+* area rouge très transparente ;
+* axes discrets ;
+* pas de chart générique bleu/vert.
+
+### 5. Stat cards
+
+```text
+Total Volume
+Total Workouts
+PRs
+Completed Sets
+```
+
+### 6. Empty state
+
+Si aucune donnée :
+
+```text
+No progress yet.
+Save workouts to build your strength curve.
+```
+
+## Validation
+
+```bash
+flutter analyze
+flutter test
+```
+
+## Commit
+
+```bash
+git add .
+git commit -m "Upgrade progress overview with premium analytics UI"
+```
+
+## Stop
+
+Après le commit, s’arrêter.
+
+---
+
+# PROMPT À DONNER À CODEX POUR LA PHASE 6
+
+```text
+PHASE 6 ONLY.
+
+Travaille uniquement sur Progress Overview. Redesign `progress_screen.dart` pour qu’il ressemble à la preview : tabs 7D/4W/3M/1Y/ALL, main card Bench Press 1RM Estimate, chart rouge fl_chart, stat cards Total Volume/Workouts/PRs/Sets, empty state premium. Utilise les données Hive/ProgressStats réelles. Ne montre pas de fausses données.
+
+Ne touche pas aux autres écrans sauf shared widgets/imports nécessaires. À la fin, lance `flutter analyze` et `flutter test`. Corrige les erreurs. Fais un commit `Upgrade progress overview with premium analytics UI`. Puis arrête-toi.
+```
+
+---
+
+# PHASE 7 — Exercises Library Premium
+
+## Objectif
+
+Transformer Exercise Library en écran proche de la preview.
+
+## Fichiers à lire
+
+* `lib/src/features/exercises/presentation/exercise_library_screen.dart`
+* `lib/src/features/exercises/data/exercise_repository.dart`
+* `lib/src/features/exercises/domain/exercise.dart`
+* `lib/src/shared/widgets/`
+
+## Travail à faire
+
+### 1. Header
+
+```text
+Exercises
+```
+
+Avec :
+
+* search icon ;
+* filter icon.
+
+### 2. Search field
+
+Champ :
+
+```text
+Search exercises...
+```
+
+Style sombre premium.
+
+### 3. Filter chips
+
+```text
+All
+Chest
+Back
+Legs
+Shoulders
+Favorites
+Custom
+```
+
+Les filtres doivent garder la logique existante.
+
+### 4. Liste exercices
+
+Chaque row :
+
+* icône équipement/muscle ;
+* nom exercice ;
+* équipement ;
+* muscle ;
+* star favorite ;
+* badge custom si exercice custom.
+
+Style :
+
+* rows compactes ;
+* border fine ;
+* star gold si favorite ;
+* pas de ListTile brut trop simple.
+
+### 5. Equipment grid
+
+Section :
+
+```text
+Equipment
+Barbell
+Dumbbell
+Machine
+Cable
+Bodyweight
+```
+
+Chaque item doit être une mini-card.
+
+### 6. Custom exercise
 
 Garder :
 
-* `ProgressStats`
-* `workoutHistoryProvider`
-* `fl_chart`
+* création ;
+* modification ;
+* suppression ;
+* persistance Hive.
 
-Ne pas afficher de fausses progressions si elles ne sont pas calculées.
+Mais améliorer visuellement les dialogs/sheets.
 
----
+## Validation
 
-## 20. Exercise Library cible
+```bash
+flutter analyze
+flutter test
+```
 
-Fichier :
+## Commit
 
-`lib/src/features/exercises/presentation/exercise_library_screen.dart`
+```bash
+git add .
+git commit -m "Upgrade exercise library to premium searchable UI"
+```
 
-Doit ressembler à la preview.
+## Stop
 
-À faire :
-
-* Search field sombre.
-* Filter icon.
-* Chips :
-
-  * All
-  * Chest
-  * Back
-  * Legs
-  * Shoulders
-* Liste exercices :
-
-  * icône muscle/equipment
-  * nom
-  * équipement
-  * star favorite
-* Section équipement :
-
-  * Barbell
-  * Dumbbell
-  * Machine
-  * Cable
-  * Bodyweight
-
-Garder la logique actuelle :
-
-* favoris persistants ;
-* exercices custom persistants ;
-* recherche par nom ;
-* recherche par muscle ;
-* recherche par equipment ;
-* création exercice ;
-* modification exercice custom ;
-* suppression exercice custom.
+Après le commit, s’arrêter.
 
 ---
 
-## 21. Programs / Routines Screen
+# PROMPT À DONNER À CODEX POUR LA PHASE 7
 
-Fichier :
+```text
+PHASE 7 ONLY.
 
-`lib/src/features/routines/presentation/routines_screen.dart`
+Travaille uniquement sur Exercise Library. Redesign `exercise_library_screen.dart` pour qu’il ressemble à la preview : search field sombre, filter icon, chips All/Chest/Back/Legs/Shoulders/Favorites/Custom, rows compactes avec icône, équipement, muscle, favorite star, equipment grid. Garde toute la logique existante : favoris Hive, exercices custom, recherche, création, modification, suppression.
 
-Les routines existent déjà.
-Ne pas supprimer le repository Hive.
-
-Transformer visuellement l’écran en `Programs`.
-
-Design cible :
-
-* Titre `Programs`.
-* Tabs :
-
-  * `My Programs`
-  * `Explore`
-* Cards :
-
-  * PPL 6 Day Split
-  * 5x5 Strength
-  * Upper / Lower
-  * Bro Split
-* Chaque card :
-
-  * image/silhouette ou gradient ;
-  * nom ;
-  * niveau + fréquence ;
-  * favori ;
-  * progression rule si disponible.
-
-Mes routines utilisateur doivent rester :
-
-* créables ;
-* modifiables ;
-* supprimables ;
-* persistantes via Hive.
-
-Si aucun asset image disponible :
-
-* utiliser gradient noir/rouge ;
-* icône Material ;
-* badge niveau/fréquence.
+Ne touche pas aux autres écrans sauf import/shared widgets nécessaires. À la fin, lance `flutter analyze` et `flutter test`. Corrige les erreurs. Fais un commit `Upgrade exercise library to premium searchable UI`. Puis arrête-toi.
+```
 
 ---
 
-## 22. AI Coach placeholder premium
+# PHASE 8 — Programs/Routines Premium + AI Coach
 
-Créer :
+## Objectif
+
+Transformer Routines en Programs premium et créer AI Coach placeholder.
+
+## Fichiers à lire
+
+* `lib/src/features/routines/presentation/routines_screen.dart`
+* `lib/src/features/routines/data/`
+* `lib/src/features/routines/domain/`
+* `lib/src/features/ai_coach/presentation/ai_coach_screen.dart`
+* `lib/src/core/router.dart`
+* `lib/src/shared/widgets/`
+
+## Partie A — Programs/Routines
+
+### Objectif
+
+L’écran doit ressembler à la preview “Programs”.
+
+### UI
+
+Header :
+
+```text
+Programs
+```
+
+Tabs :
+
+```text
+My Programs
+Explore
+```
+
+Cards Explore :
+
+```text
+PPL 6 Day Split
+Intermediate • 6 days/week
+Popular
+
+5x5 Strength
+Beginner • 3 days/week
+
+Upper / Lower
+Intermediate • 4 days/week
+
+Bro Split
+Advanced • 5 days/week
+```
+
+Chaque card :
+
+* image ou gradient ;
+* titre ;
+* niveau/fréquence ;
+* star ;
+* badge ;
+* chevron.
+
+### Données
+
+Garder routines Hive :
+
+* création ;
+* édition ;
+* suppression ;
+* progression rule.
+
+Ne pas remplacer les routines utilisateur par une liste statique uniquement.
+
+## Partie B — AI Coach
+
+Créer/améliorer :
 
 `lib/src/features/ai_coach/presentation/ai_coach_screen.dart`
 
-Route :
+UI cible :
 
 ```text
-/ai-coach
+AI Coach
 ```
 
-Design cible :
+Insight card :
 
-* Header `AI Coach`
-* Insight card :
+```text
+Your bench press has been stuck for 3 weeks.
+Consider a deload or variation.
+VIEW RECOMMENDATION
+```
 
-  * `Your bench press has been stuck for 3 weeks. Consider a deload or variation.`
-  * Button `VIEW RECOMMENDATION`
-* Recovery card :
+Recovery card :
 
-  * `82%`
-  * `Good to go`
-  * sleep placeholder
-  * HRV placeholder
-* Volume analysis :
+```text
+82%
+Good to go
+Sleep       Coming soon
+HRV         Coming soon
+```
 
-  * mini bar chart rouge
-  * `High volume on legs. Consider reducing leg volume by 15%.`
+Volume analysis :
+
+```text
+High volume on legs.
+Consider reducing leg volume by 15%.
+```
+
+Mini chart rouge.
 
 Important :
 
-* Marquer clairement `Coming soon` pour HRV/sleep si pas de data réelle.
-* Ne pas prétendre lire des capteurs réels.
-* Ne pas ajouter permissions health/body sensors.
-* Ne pas ajouter API IA réelle maintenant.
+* Ne pas prétendre avoir des données capteurs réelles.
+* Utiliser `Coming soon`.
+* Pas de permissions.
+* Pas d’API IA.
+
+## Validation
+
+```bash
+flutter analyze
+flutter test
+```
+
+## Commit
+
+```bash
+git add .
+git commit -m "Upgrade programs and AI coach premium screens"
+```
+
+## Stop
+
+Après le commit, s’arrêter.
 
 ---
 
-## 23. Onboarding
-
-Fichier :
-
-`lib/src/features/onboarding/presentation/onboarding_screen.dart`
-
-Garder l’onboarding existant mais améliorer le style.
-
-Champs attendus :
-
-* Goal :
-
-  * Strength
-  * Hypertrophy
-  * Powerbuilding
-  * Fat Loss
-* Level :
-
-  * Beginner
-  * Intermediate
-  * Advanced
-* Units :
-
-  * kg
-  * lbs
-* Frequency :
-
-  * 3 days/week
-  * 4 days/week
-  * 5 days/week
-  * 6 days/week
-* Training type :
-
-  * PPL
-  * Upper/Lower
-  * Full Body
-  * Bro Split
-
-Style :
-
-* Cards sélectionnables.
-* Sélection rouge.
-* Fond noir.
-* Gros bouton `FINISH SETUP`.
-* Possibilité de revenir modifier depuis Home.
-
----
-
-## 24. Premium Screen
-
-Fichier :
-
-`lib/src/features/premium/presentation/premium_screen.dart`
-
-Garder comme placeholder.
-Ne pas ajouter RevenueCat maintenant.
-
-Style :
-
-* Titre `IronForge Pro`
-* Cards features :
-
-  * Cloud Sync
-  * Advanced Analytics
-  * AI Coach
-  * Progress Photos
-  * CSV Export
-  * Wearables
-* Badge `Coming soon`
-* Bouton désactivé ou `Join waitlist` local sans backend.
-
-Important :
-
-* Pas d’achat réel.
-* Pas de RevenueCat.
-* Pas de promesse mensongère si non implémenté.
-
----
-
-## 25. PR Celebration
-
-Créer :
-
-`lib/src/shared/widgets/pr_celebration.dart`
-
-Objectif :
-
-* feedback premium quand PR détecté ;
-* haptic lourd ;
-* dialog court ;
-* option confetti si dépendance ajoutée.
-
-Contenu dialog :
+# PROMPT À DONNER À CODEX POUR LA PHASE 8
 
 ```text
-PR FORGED
-New estimated max unlocked.
-Keep lifting.
-```
+PHASE 8 ONLY.
 
-Style :
+Travaille uniquement sur Programs/Routines + AI Coach. Redesign `routines_screen.dart` en écran Programs premium avec tabs My Programs/Explore, cards PPL/5x5/Upper Lower/Bro Split, gradients/images, badges, favoris, tout en gardant les routines Hive créables/modifiables/supprimables. Ensuite crée/améliore `ai_coach_screen.dart` comme placeholder premium : insight card, recovery Coming soon, volume analysis mini chart rouge.
 
-* fond noir/panel ;
-* bordure gold ;
-* trophy icon gold ;
-* bouton rouge.
-
-Ne pas déclencher sur rebuild.
-Déclencher uniquement après action utilisateur `Log`.
-
----
-
-## 26. Rest timer feedback
-
-L’app actuelle a déjà haptic/sound.
-Conserver.
-
-Améliorer :
-
-* vibration à fin de repos ;
-* son léger ;
-* bouton +15s ;
-* bouton pause ;
-* affichage temps lisible.
-
-Ne pas ajouter notification background maintenant sauf si simple et sans permission sensible problématique.
-
----
-
-## 27. Plate calculator logic
-
-Garder la logique existante si présente.
-Sinon créer une utility simple :
-
-```dart
-class PlateLoad {
-  const PlateLoad({
-    required this.plate,
-    required this.countPerSide,
-  });
-
-  final double plate;
-  final int countPerSide;
-}
-
-List<PlateLoad> calculatePlates({
-  required double targetWeight,
-  double barWeight = 20,
-  List<double> plates = const [25, 20, 15, 10, 5, 2.5, 1.25],
-}) {
-  final sideWeight = (targetWeight - barWeight) / 2;
-  if (sideWeight <= 0) return [];
-
-  var remaining = sideWeight;
-  final result = <PlateLoad>[];
-
-  for (final plate in plates) {
-    final count = remaining ~/ plate;
-    if (count > 0) {
-      result.add(PlateLoad(plate: plate, countPerSide: count));
-      remaining -= count * plate;
-    }
-  }
-
-  return result;
-}
+Ne pas ajouter Firebase, RevenueCat, API IA, permissions capteurs. À la fin, lance `flutter analyze` et `flutter test`. Corrige les erreurs. Fais un commit `Upgrade programs and AI coach premium screens`. Puis arrête-toi.
 ```
 
 ---
 
-## 28. Workout logger UX rules
+# PHASE 9 — Polish Final + QA + Preview Matching
 
-Très important :
+## Objectif
 
-* Logging d’un set doit rester en maximum 1–2 taps.
-* Les boutons doivent être gros.
-* Les champs poids/reps/RPE doivent être faciles à toucher.
-* Le dernier poids utilisé doit être visible ou accessible.
-* `Same as last time` doit être visible.
-* `Smart +` doit rester visible.
-* Le rest timer ne doit pas bloquer le logging.
-* L’utilisateur doit pouvoir ajouter un exercice rapidement.
-* L’utilisateur doit pouvoir finir une séance clairement.
+Dernière passe pour rendre l’app cohérente et proche de la preview.
 
----
+Cette phase est uniquement du polish, pas une réécriture.
 
-## 29. Données et confidentialité
+## Fichiers à vérifier
 
-Ne pas modifier la politique actuelle sans raison.
+Tous les écrans :
 
-Interdictions dans cette phase :
+```text
+Home
+Workout Logger
+Rest Timer
+Plate Calculator
+History
+Progress
+Exercises
+Programs
+AI Coach
+Onboarding
+Premium
+```
 
-* Pas de camera permission.
-* Pas de photos permission.
-* Pas de location.
-* Pas de microphone.
-* Pas de contacts.
-* Pas de body sensors.
-* Pas de Firebase.
-* Pas de cloud sync.
-* Pas d’analytics tiers.
-* Pas de RevenueCat.
+## Travail à faire
 
-L’app reste locale/offline-first.
+### 1. Cohérence visuelle
 
----
+Vérifier partout :
 
-## 30. Tests à préserver
+* même fond noir ;
+* mêmes cards ;
+* mêmes radius ;
+* mêmes borders ;
+* mêmes boutons ;
+* mêmes text styles ;
+* même bottom nav ;
+* pas de composant brut Flutter qui fait prototype.
 
-À la fin, exécuter :
+### 2. Supprimer textes non pro
+
+Supprimer ou remplacer :
+
+```text
+placeholder
+TODO
+Coming soon
+```
+
+Exception : `Coming soon` est autorisé uniquement sur Premium / AI sensor data.
+
+### 3. Espacements
+
+Uniformiser :
+
+```text
+page padding : 16
+card padding : 12–16
+section spacing : 14–20
+row spacing : 8–12
+radius : 14–18
+border : 1px
+```
+
+### 4. Responsive
+
+Tester sur tailles :
+
+* petit Android ;
+* standard 390x844 ;
+* grand téléphone.
+
+Pas d’overflow.
+
+### 5. Empty states
+
+Tous les écrans doivent avoir un état vide propre :
+
+* pas d’écran blanc ;
+* pas de liste vide sans message ;
+* CTA quand utile.
+
+### 6. App icon / branding
+
+Si possible :
+
+* vérifier assets branding ;
+* ne pas casser pubspec ;
+* ne pas ajouter de gros fichiers inutiles.
+
+### 7. QA fonctionnelle
+
+Tester manuellement :
+
+* onboarding ;
+* ajouter exercice custom ;
+* favorite exercise ;
+* start workout ;
+* add exercise ;
+* log set ;
+* same as last ;
+* smart set ;
+* edit/delete set ;
+* finish workout ;
+* voir history ;
+* voir progress ;
+* créer routine ;
+* modifier routine.
+
+## Validation finale obligatoire
 
 ```bash
 flutter pub get
@@ -1787,340 +1514,207 @@ flutter test
 flutter build apk --debug
 ```
 
-Tout doit passer.
+## Commit
 
-Si les tests cassent :
+```bash
+git add .
+git commit -m "Final polish for premium IronForge preview match"
+```
 
-* corriger le code ;
-* ne pas supprimer les tests pour cacher le problème ;
-* garder les repositories existants ;
-* garder les providers existants.
+## Stop
 
----
-
-## 31. Priorités exactes d’exécution
-
-Travailler dans cet ordre :
-
-1. Mettre à jour `app_theme.dart`.
-2. Ajouter `if_text_styles.dart`.
-3. Ajouter les composants design system.
-4. Remplacer `ForgeShell` avec bottom navigation.
-5. Ajouter route `/history`.
-6. Ajouter route `/ai-coach`.
-7. Redesign Home.
-8. Redesign Workout Logger.
-9. Ajouter Rest Timer screen.
-10. Ajouter Plate Calculator screen.
-11. Redesign Progress.
-12. Redesign Exercises.
-13. Redesign Routines en Programs.
-14. Redesign Onboarding.
-15. Redesign Premium placeholder.
-16. Ajouter PR celebration.
-17. Ajouter assets folders et placeholders.
-18. Mettre à jour `pubspec.yaml`.
-19. Exécuter les commandes de validation.
-20. Corriger toutes les erreurs.
+Après le commit, s’arrêter.
 
 ---
 
-## 32. Contraintes importantes
+# PROMPT À DONNER À CODEX POUR LA PHASE 9
 
-Ne pas faire :
+```text
+PHASE 9 ONLY.
 
-* Ne pas supprimer Hive.
-* Ne pas supprimer les tests existants.
-* Ne pas ajouter Firebase maintenant.
-* Ne pas ajouter RevenueCat maintenant.
-* Ne pas ajouter permissions Android sensibles.
-* Ne pas committer keystore.
-* Ne pas committer `.jks`.
-* Ne pas committer `.env`.
-* Ne pas committer `android/key.properties`.
-* Ne pas remplacer tout le projet par un template.
-* Ne pas casser `com.ironforge.app`.
-* Ne pas casser la sauvegarde offline.
-* Ne pas casser les exercices custom.
-* Ne pas casser les routines.
-* Ne pas casser l’onboarding.
+Fais uniquement le polish final et la QA visuelle. Compare tous les écrans à la preview IronForge rouge/noir. Uniformise cards, spacing, radius, borders, typography, bottom nav, empty states. Supprime les textes non professionnels comme “placeholder” sauf Coming soon pour Premium/AI sensor data. Vérifie qu’il n’y a pas d’overflow. Ne réécris pas l’app. Ne change pas la logique Hive.
 
-Faire :
-
-* Garder la logique locale.
-* Garder les repositories existants.
-* Garder les providers existants.
-* Améliorer les écrans existants.
-* Ajouter seulement les fichiers nécessaires.
-* Préserver `flutter analyze` sans erreurs.
-* Préserver `flutter test`.
-* Respecter la preview rouge/noir.
-* Rendre l’app beaucoup plus premium.
+Teste manuellement les flows principaux. À la fin, lance `flutter pub get`, `flutter analyze`, `flutter test`, `flutter build apk --debug`. Corrige toutes les erreurs. Fais un commit `Final polish for premium IronForge preview match`. Puis arrête-toi.
+```
 
 ---
 
-## 33. Checklist finale
+# ORDRE EXACT À UTILISER AVEC CODEX
 
-La version terminée doit avoir :
+Ne donne pas tout en une seule demande.
 
-* [ ] Logo IronForge rouge/noir.
-* [ ] App icon prête ou assets placeholders propres.
-* [ ] Home dashboard proche de la preview.
-* [ ] Workout logger dense et premium.
-* [ ] Rest timer circulaire rouge.
-* [ ] Plate calculator visuel.
-* [ ] History screen.
-* [ ] Exercise library style preview.
-* [ ] Programs/Routines style preview.
-* [ ] Progress overview avec tabs et chart rouge.
-* [ ] AI Coach placeholder premium.
-* [ ] Bottom navigation persistante.
-* [ ] Couleur principale rouge, pas teal.
-* [ ] Tous les textes visibles sur fond noir.
-* [ ] Aucune permission sensible ajoutée.
-* [ ] Hive toujours fonctionnel.
-* [ ] Routines toujours persistantes.
-* [ ] Exercices custom toujours persistants.
-* [ ] Onboarding toujours persistant.
-* [ ] `flutter analyze` OK.
-* [ ] `flutter test` OK.
-* [ ] `flutter build apk --debug` OK.
+Utilise ces prompts un par un :
+
+1. Donner le prompt Phase 1.
+2. Attendre qu’il termine et commit.
+3. Vérifier visuellement.
+4. Donner le prompt Phase 2.
+5. Attendre qu’il termine et commit.
+6. Vérifier visuellement.
+7. Continuer jusqu’à Phase 9.
+
+Si une phase donne un mauvais résultat, ne passe pas à la suivante.
+Demander une correction ciblée de la même phase.
 
 ---
 
-## 34. Validation visuelle contre la preview
+# PROMPT DE CORRECTION SI LE RÉSULTAT EST TROP SIMPLE
 
-Comparer écran par écran.
+Utiliser ce prompt si Codex fait un écran trop basique :
 
-### Home
+```text
+Le résultat est encore trop simple et trop proche d’un prototype Flutter. Ne passe pas à la phase suivante.
+
+Reprends uniquement l’écran de cette phase et rapproche-le beaucoup plus de la preview IronForge : plus dense, plus premium, cards plus compactes, borders fines, rouge plus présent, meilleur header, meilleur spacing, aucun composant Material brut visible, aucun texte placeholder, meilleure hiérarchie visuelle.
+
+Ne modifie pas la logique. Ne touche pas aux autres écrans. Relance `flutter analyze` et `flutter test`, corrige les erreurs, puis commit une correction avec un message clair.
+```
+
+---
+
+# PROMPT DE CORRECTION SI CODEX CASSE LA LOGIQUE
+
+Utiliser ce prompt si une fonctionnalité existante casse :
+
+```text
+Tu as cassé une logique existante. Ne continue pas le redesign.
+
+Répare uniquement la régression. Garde l’UI déjà faite si possible, mais restaure la fonctionnalité : Hive, repository, provider, workout logging, routines, exercices custom, favoris, onboarding ou history selon le problème.
+
+Ne supprime aucun test. Ajoute un test si nécessaire. Relance `flutter analyze` et `flutter test`. Commit uniquement le fix.
+```
+
+---
+
+# PROMPT DE CORRECTION SI CODEX FAIT TROP DE CHOSES
+
+Utiliser ce prompt si Codex dépasse la phase :
+
+```text
+Tu as dépassé le périmètre de la phase. Reviens au scope demandé.
+
+Annule ou limite les changements qui ne concernent pas cette phase, sauf s’ils sont strictement nécessaires pour compiler. Le projet doit avancer étape par étape. Ne commence jamais une phase suivante sans demande explicite.
+```
+
+---
+
+# VALIDATION FINALE VISUELLE
+
+L’app finale doit avoir ce niveau :
+
+## Home
 
 Doit montrer :
 
-* IronForge branding.
-* Greeting.
-* Streak.
-* Quote card.
-* Start Workout rouge.
-* Today's Plan.
-* Stats cards.
+* branding IronForge ;
+* greeting ;
+* streak card ;
+* quote card ;
+* gros bouton START WORKOUT ;
+* Today’s Plan ;
+* stats cards ;
+* quick actions premium.
 
-### Workout Logger
-
-Doit montrer :
-
-* Bench Press ou Live Workout.
-* Chips muscle/equipment.
-* Warm-up sets ou section équivalente.
-* Working sets.
-* Same as last time.
-* Smart +.
-* Add set / Log set.
-* Plate calculator.
-* Rest timer compact.
-
-### Rest Timer
+## Workout Logger
 
 Doit montrer :
 
-* cercle rouge.
-* temps au centre.
-* -15 / pause / +15.
-* vibration/sound rows.
+* header dense ;
+* exercise picker premium ;
+* chips equipment/muscle ;
+* table de sets ;
+* inputs rapides ;
+* Same as last ;
+* Smart + ;
+* Log Set rouge ;
+* Plate Calculator ;
+* Rest Timer ;
+* PR celebration ;
+* Finish clair.
 
-### Plate Calculator
+## Rest Timer
 
 Doit montrer :
 
-* kg/lbs toggle.
-* total weight.
-* barbell visual.
-* plate list.
+* cercle rouge ;
+* temps au centre ;
+* -15s ;
+* pause/play ;
+* +15s ;
+* vibration ;
+* sound.
+
+## Plate Calculator
+
+Doit montrer :
+
+* kg/lbs toggle ;
+* poids total grand ;
+* barre visuelle ;
+* plates list ;
 * total rouge.
 
-### Progress
+## History
 
 Doit montrer :
 
-* tabs période.
-* 1RM estimate.
-* chart rouge.
+* tabs ;
+* groupes par date ;
+* workout cards ;
+* exercise rows ;
+* empty state premium.
+
+## Progress
+
+Doit montrer :
+
+* period tabs ;
+* main 1RM estimate card ;
+* chart rouge ;
 * stat cards.
 
-### History
+## Exercises
 
 Doit montrer :
 
-* date groups.
-* workout cards.
-* exercise rows.
+* search ;
+* chips ;
+* list rows compactes ;
+* favorite stars ;
+* equipment grid ;
+* custom exercises.
 
-### Exercises
-
-Doit montrer :
-
-* search.
-* chips.
-* favorite stars.
-* equipment grid.
-
-### Programs
+## Programs
 
 Doit montrer :
 
-* tabs My Programs / Explore.
-* program cards avec images/gradients.
-* routines utilisateur modifiables.
+* My Programs / Explore ;
+* program cards premium ;
+* routines Hive toujours modifiables.
 
-### AI Coach
+## AI Coach
 
 Doit montrer :
 
-* insight card.
-* recovery placeholder.
-* volume analysis.
+* insight card ;
+* recovery card ;
+* volume analysis ;
+* coming soon clair pour données capteurs.
 
 ---
 
-## 35. Textes UI recommandés
+# DÉFINITION DU RÉSULTAT PROFESSIONNEL
 
-Home :
+Le résultat est accepté seulement si :
 
-```text
-Yo, Iron Titan 💪
-Let's crush today.
-Workout Streak
-START WORKOUT
-Today's Plan
-Push Day
-Volume
-Workouts
-Sets
-Best Bench
-```
+* l’app ne ressemble plus à un prototype ;
+* les écrans ressemblent à une vraie app premium ;
+* l’app est cohérente écran par écran ;
+* l’expérience est rapide ;
+* l’identité rouge/noir est forte ;
+* aucune logique existante n’est cassée ;
+* tous les tests passent ;
+* le build debug Android passe.
 
-Workout :
+Fin du plan.
 
-```text
-Live Workout
-Quick add exercise
-Same as last time
-Smart +
-Log Set
-Add Set
-Plate Calculator
-Exercise notes
-Finish Workout
-PR FORGED
-```
-
-Rest Timer :
-
-```text
-Rest Timer
-RESTING
-UP NEXT
-Vibration
-Sound
-```
-
-Plate Calculator :
-
-```text
-Plate Calculator
-Total Weight
-Plates per side
-Bar
-Total
-```
-
-Progress :
-
-```text
-Progress Overview
-1RM Estimate
-Total Volume
-Total Workouts
-PRs
-Completed Sets
-```
-
-History :
-
-```text
-History
-All
-Workouts
-PRs
-Notes
-No workouts yet.
-Start your first session and forge your baseline.
-```
-
-Exercises :
-
-```text
-Exercises
-Search exercises...
-All
-Chest
-Back
-Legs
-Shoulders
-Equipment
-Custom Exercise
-Favorites
-```
-
-Programs :
-
-```text
-Programs
-My Programs
-Explore
-PPL 6 Day Split
-5x5 Strength
-Upper / Lower
-Bro Split
-```
-
-AI Coach :
-
-```text
-AI Coach
-Insight
-View Recommendation
-Recovery
-Coming soon
-Volume Analysis
-```
-
----
-
-## 36. Notes de qualité
-
-Le but n’est pas seulement de rendre l’app jolie.
-
-Le but est qu’un lifter puisse :
-
-* ouvrir l’app en salle ;
-* trouver son exercice en 2 secondes ;
-* voir son dernier poids ;
-* logger un set rapidement ;
-* sentir un feedback haptique ;
-* voir quand il bat un PR ;
-* suivre sa progression ;
-* avoir envie de revenir demain.
-
-La performance et la lisibilité passent avant les animations lourdes.
-
----
-
-## 37. Prompt court à utiliser après avoir ajouté ce fichier
-
-Après avoir ajouté ce fichier à la racine du repo, utiliser ce message pour Codex :
-
-```text
-Lis `IRONFORGE_CODEX_REDESIGN_INSTRUCTIONS.md`. Ne repars pas de zéro. Le projet Flutter actuel est déjà fonctionnel en offline-first avec Hive. Tu dois transformer l’UI pour correspondre à la preview IronForge rouge/noir : home dashboard, workout logger dense, rest timer circulaire, plate calculator, progress, history, exercises, programs et AI coach placeholder. Garde Hive, les repositories, les tests, le package Android `com.ironforge.app`, et n’ajoute pas Firebase/RevenueCat maintenant. À la fin, exécute `flutter pub get`, `flutter analyze`, `flutter test`, puis `flutter build apk --debug`. Corrige toutes les erreurs avant de terminer.
-```
-
-Fin du document.

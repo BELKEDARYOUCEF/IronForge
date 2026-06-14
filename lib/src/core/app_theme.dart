@@ -90,8 +90,11 @@ ThemeData buildIronForgeTheme() {
         backgroundColor: IFColors.red,
         foregroundColor: Colors.white,
         minimumSize: const Size.fromHeight(52),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        textStyle: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.5),
+        elevation: 0,
+        shadowColor: IFColors.redGlow,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle:
+            const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.6),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
@@ -101,10 +104,24 @@ ThemeData buildIronForgeTheme() {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     ),
-    dividerTheme: const DividerThemeData(color: IFColors.borderSoft, thickness: 1),
+    dividerTheme:
+        const DividerThemeData(color: IFColors.borderSoft, thickness: 1),
+    dialogTheme: DialogThemeData(
+      backgroundColor: IFColors.panel,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: IFColors.borderSoft),
+      ),
+    ),
+    listTileTheme: const ListTileThemeData(
+      iconColor: IFColors.textMuted,
+      textColor: IFColors.text,
+      subtitleTextStyle: TextStyle(color: IFColors.textMuted),
+    ),
     snackBarTheme: SnackBarThemeData(
       backgroundColor: IFColors.panel2,
-      contentTextStyle: const TextStyle(color: IFColors.text, fontWeight: FontWeight.w700),
+      contentTextStyle:
+          const TextStyle(color: IFColors.text, fontWeight: FontWeight.w700),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),

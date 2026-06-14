@@ -2,11 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:percent_indicator/circular_percent_indicator.dart';
-
 import '../../../core/app_theme.dart';
 import '../../../core/if_text_styles.dart';
 import '../../../shared/widgets/forge_card.dart';
+import '../../../shared/widgets/forge_progress_ring.dart';
 import '../../../shared/widgets/forge_shell.dart';
 
 class RestTimerScreen extends StatefulWidget {
@@ -51,7 +50,8 @@ class _RestTimerScreenState extends State<RestTimerScreen> {
     });
   }
 
-  String get label => '${(remaining ~/ 60).toString().padLeft(1, '0')}:${(remaining % 60).toString().padLeft(2, '0')}';
+  String get label =>
+      '${(remaining ~/ 60).toString().padLeft(1, '0')}:${(remaining % 60).toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
@@ -64,22 +64,24 @@ class _RestTimerScreenState extends State<RestTimerScreen> {
         children: [
           const SizedBox(height: 18),
           Center(
-            child: CircularPercentIndicator(
-              radius: 128,
-              lineWidth: 14,
-              percent: percent,
-              circularStrokeCap: CircularStrokeCap.round,
+            child: ForgeProgressRing(
+              size: 256,
+              strokeWidth: 14,
+              value: percent,
               backgroundColor: IFColors.panel3,
-              progressColor: IFColors.red,
+              color: IFColors.red,
               center: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text('RESTING', style: IFText.micro),
                   const SizedBox(height: 8),
-                  Text(label, style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900)),
+                  Text(label,
+                      style: const TextStyle(
+                          fontSize: 48, fontWeight: FontWeight.w900)),
                   const SizedBox(height: 8),
                   const Text('UP NEXT', style: IFText.micro),
-                  const Text('Bench Press • Set 3 of 4', style: IFText.bodyMuted),
+                  const Text('Bench Press • Set 3 of 4',
+                      style: IFText.bodyMuted),
                 ],
               ),
             ),
@@ -87,11 +89,23 @@ class _RestTimerScreenState extends State<RestTimerScreen> {
           const SizedBox(height: 24),
           Row(
             children: [
-              Expanded(child: OutlinedButton(onPressed: () => setState(() => remaining = (remaining - 15).clamp(0, 999)), child: const Text('-15s'))),
+              Expanded(
+                  child: OutlinedButton(
+                      onPressed: () => setState(
+                          () => remaining = (remaining - 15).clamp(0, 999)),
+                      child: const Text('-15s'))),
               const SizedBox(width: 12),
-              Expanded(child: ElevatedButton(onPressed: () => setState(() => running = !running), child: Icon(running ? Icons.pause_rounded : Icons.play_arrow_rounded))),
+              Expanded(
+                  child: ElevatedButton(
+                      onPressed: () => setState(() => running = !running),
+                      child: Icon(running
+                          ? Icons.pause_rounded
+                          : Icons.play_arrow_rounded))),
               const SizedBox(width: 12),
-              Expanded(child: OutlinedButton(onPressed: () => setState(() => remaining += 15), child: const Text('+15s'))),
+              Expanded(
+                  child: OutlinedButton(
+                      onPressed: () => setState(() => remaining += 15),
+                      child: const Text('+15s'))),
             ],
           ),
           const SizedBox(height: 16),
@@ -107,7 +121,10 @@ class _RestTimerScreenState extends State<RestTimerScreen> {
                 DropdownButtonFormField<String>(
                   initialValue: sound,
                   decoration: const InputDecoration(labelText: 'Sound'),
-                  items: const ['Beep', 'Chime', 'Off'].map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
+                  items: const ['Beep', 'Chime', 'Off']
+                      .map((item) =>
+                          DropdownMenuItem(value: item, child: Text(item)))
+                      .toList(),
                   onChanged: (value) => setState(() => sound = value ?? sound),
                 ),
               ],

@@ -1,21 +1,53 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_theme.dart';
+import '../../core/if_text_styles.dart';
 
 class ForgeSectionHeader extends StatelessWidget {
-  const ForgeSectionHeader({super.key, required this.title, this.action, this.onActionTap});
+  const ForgeSectionHeader({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.action,
+    this.onActionTap,
+  });
 
   final String title;
+  final String? subtitle;
   final String? action;
   final VoidCallback? onActionTap;
 
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Text(title, style: const TextStyle(color: IFColors.text, fontSize: 18, fontWeight: FontWeight.w900)),
-        const Spacer(),
-        if (action != null) TextButton(onPressed: onActionTap, child: Text(action!)),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  style: const TextStyle(
+                      color: IFColors.text,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900)),
+              if (subtitle != null) ...[
+                const SizedBox(height: 3),
+                Text(subtitle!, style: IFText.micro),
+              ],
+            ],
+          ),
+        ),
+        if (action != null)
+          TextButton(
+            onPressed: onActionTap,
+            style: TextButton.styleFrom(
+              foregroundColor: IFColors.red,
+              textStyle:
+                  const TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+            ),
+            child: Text(action!),
+          ),
       ],
     );
   }
