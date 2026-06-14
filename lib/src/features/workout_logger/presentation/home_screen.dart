@@ -39,12 +39,6 @@ class HomeScreen extends ConsumerWidget {
 
     return ForgeShell(
       title: 'IronForge',
-      actions: [
-        IconButton(
-            onPressed: () => context.go('/onboarding'),
-            icon: const Icon(Icons.settings_rounded)),
-        const SizedBox(width: 6),
-      ],
       child: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         children: [
