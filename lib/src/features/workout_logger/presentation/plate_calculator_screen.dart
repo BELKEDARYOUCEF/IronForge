@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/app_theme.dart';
+import '../../../core/if_spacing.dart';
 import '../../../core/if_text_styles.dart';
 import '../../../shared/widgets/forge_card.dart';
 import '../../../shared/widgets/forge_shell.dart';
@@ -39,37 +40,32 @@ class _PlateCalculatorScreenState extends State<PlateCalculatorScreen> {
         children: [
           ForgeCard(
             glow: true,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(IFSpacing.paddingCard),
             child: Column(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: SegmentedButton<bool>(
-                        segments: const [
-                          ButtonSegment(value: true, label: Text('KG')),
-                          ButtonSegment(value: false, label: Text('LBS')),
-                        ],
-                        selected: {kg},
-                        onSelectionChanged: (value) =>
-                            setState(() => kg = value.first),
-                      ),
-                    ),
-                  ],
+                _UnitToggle(
+                  isKg: kg,
+                  onChanged: (value) => setState(() => kg = value),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: IFSpacing.spacingBlock),
                 TextField(
                   controller: controller,
-                  keyboardType: TextInputType.number,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                       fontWeight: FontWeight.w900, fontSize: 20),
-                  decoration: const InputDecoration(labelText: 'Total Weight'),
+                  decoration: InputDecoration(
+                    hintText: '0',
+                    suffixText: kg ? 'kg' : 'lbs',
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                  ),
                   onChanged: (_) => setState(() {}),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: IFSpacing.spacingBlock),
                 const Text('TOTAL WEIGHT', style: IFText.micro),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
                   totalLabel,
                   style: const TextStyle(
@@ -78,16 +74,16 @@ class _PlateCalculatorScreenState extends State<PlateCalculatorScreen> {
                     color: IFColors.red,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: IFSpacing.spacingBlock),
                 _BarbellVisual(plates: plates),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: IFSpacing.spacingBlock),
           const Text('PLATES PER SIDE', style: IFText.label),
           const SizedBox(height: 8),
           ForgeCard(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(IFSpacing.paddingCard),
             child: Column(
               children: [
                 if (plates.isEmpty)
@@ -102,14 +98,14 @@ class _PlateCalculatorScreenState extends State<PlateCalculatorScreen> {
                     value: '${entry.value * 2} plates',
                     color: _plateColor(entry.key),
                   ),
-                  const Divider(height: 14),
+                  const Divider(height: IFSpacing.spacingBlock),
                 ],
                 const _PlateCountRow(
                   label: 'Bar',
                   value: '20 kg',
                   color: IFColors.border,
                 ),
-                const Divider(height: 14),
+                const Divider(height: IFSpacing.spacingBlock),
                 _PlateCountRow(
                   label: 'TOTAL',
                   value: '${targetKg.g} kg',
@@ -138,6 +134,67 @@ class _PlateCalculatorScreenState extends State<PlateCalculatorScreen> {
     if (plate >= 15) return IFColors.gold;
     if (plate >= 10) return IFColors.green;
     return IFColors.textFaint;
+  }
+}
+
+class _UnitToggle extends StatelessWidget {
+  const _UnitToggle({required this.isKg, required this.onChanged});
+
+  final bool isKg;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+            child: _UnitBtn(
+                label: 'KG', active: isKg, onTap: () => onChanged(true))),
+        const SizedBox(width: 8),
+        Expanded(
+            child: _UnitBtn(
+                label: 'LBS', active: !isKg, onTap: () => onChanged(false))),
+      ],
+    );
+  }
+}
+
+class _UnitBtn extends StatelessWidget {
+  const _UnitBtn(
+      {required this.label, required this.active, required this.onTap});
+
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(IFSpacing.radiusInput),
+      onTap: onTap,
+      child: Container(
+        height: 38,
+        decoration: BoxDecoration(
+          color: active ? IFColors.red : IFColors.panel2,
+          borderRadius: BorderRadius.circular(IFSpacing.radiusInput),
+          border: Border.all(
+            color: active
+                ? IFColors.redGlow.withValues(alpha: 0.4)
+                : IFColors.border,
+            width: IFSpacing.borderWidth,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: TextStyle(
+            color: active ? Colors.white : IFColors.textMuted,
+            fontWeight: FontWeight.w900,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
   }
 }
 
