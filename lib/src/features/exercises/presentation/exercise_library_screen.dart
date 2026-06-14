@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/app_theme.dart';
+import '../../../core/if_spacing.dart';
 import '../../../core/if_text_styles.dart';
 import '../../../shared/widgets/forge_card.dart';
 import '../../../shared/widgets/forge_chip.dart';
@@ -40,46 +41,66 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
         children: [
-          TextField(
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.search_rounded),
-              suffixIcon: Icon(Icons.tune_rounded),
-              labelText: 'Search exercises...',
+          // Dark search field
+          Container(
+            decoration: BoxDecoration(
+              color: IFColors.panel2,
+              borderRadius: BorderRadius.circular(IFSpacing.radiusInput),
+              border: Border.all(color: IFColors.border, width: IFSpacing.borderWidth),
             ),
-            onChanged: (value) =>
-                setState(() => query = value.trim().toLowerCase()),
+            child: TextField(
+              decoration: const InputDecoration(
+                hintText: 'Search exercises…',
+                hintStyle: IFText.bodyMuted,
+                prefixIcon: Icon(Icons.search_rounded,
+                    color: IFColors.red, size: 20),
+                suffixIcon: Icon(Icons.tune_rounded,
+                    color: IFColors.textMuted, size: 20),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 12),
+              ),
+              style: IFText.body,
+              onChanged: (value) =>
+                  setState(() => query = value.trim().toLowerCase()),
+            ),
           ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final item in const [
-                'All',
-                'Chest',
-                'Back',
-                'Legs',
-                'Shoulders',
-                'Favorites',
-                'Custom'
-              ])
-                ForgeChip(
-                  label: item,
-                  selected: filter == item,
-                  onTap: () => setState(() => filter = item),
-                ),
-            ],
+          const SizedBox(height: IFSpacing.spacingBlock),
+          // Horizontal filter chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final item in const [
+                  'All',
+                  'Chest',
+                  'Back',
+                  'Legs',
+                  'Shoulders',
+                  'Favorites',
+                  'Custom',
+                ])
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ForgeChip(
+                      label: item,
+                      selected: filter == item,
+                      onTap: () => setState(() => filter = item),
+                    ),
+                  ),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: IFSpacing.spacingBlock),
           const ForgeSectionHeader(title: 'Equipment'),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            childAspectRatio: 2.4,
+            mainAxisSpacing: IFSpacing.spacingBlock,
+            crossAxisSpacing: IFSpacing.spacingBlock,
+            childAspectRatio: 2.6,
             children: const [
               _EquipmentTile(
                   label: 'Barbell', icon: Icons.fitness_center_rounded),
@@ -93,31 +114,35 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
                   label: 'Bodyweight', icon: Icons.accessibility_new_rounded),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: IFSpacing.spacingBlock),
           ForgePrimaryButton(
             label: 'CUSTOM EXERCISE',
             icon: Icons.add_rounded,
-            height: 48,
+            height: 46,
             onPressed: () => _showExerciseDialog(context),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: IFSpacing.spacingBlock),
           exercises.when(
-            loading: () => const LinearProgressIndicator(),
-            error: (error, stackTrace) => Text('Exercises unavailable: $error'),
+            loading: () =>
+                const LinearProgressIndicator(color: IFColors.red),
+            error: (error, stackTrace) =>
+                Text('Exercises unavailable: $error'),
             data: (items) {
               final visible = items.where(_matches).toList();
               if (visible.isEmpty) {
                 return const ForgeEmptyState(
                     icon: Icons.search_rounded,
                     title: 'No exercises found.',
-                    message: 'Adjust filters or create a custom exercise.');
+                    message:
+                        'Adjust filters or create a custom exercise.');
               }
 
               return Column(
                 children: [
                   for (final exercise in visible)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.only(
+                          bottom: IFSpacing.spacingBlock),
                       child: _ExerciseRow(
                         exercise: exercise,
                         icon: _equipmentIcon(exercise.equipment),
@@ -128,8 +153,8 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
                           ref.invalidate(exercisesProvider);
                         },
                         onEdit: exercise.isCustom
-                            ? () =>
-                                _showExerciseDialog(context, exercise: exercise)
+                            ? () => _showExerciseDialog(context,
+                                exercise: exercise)
                             : null,
                         onDelete: exercise.isCustom
                             ? () async {
@@ -220,7 +245,8 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
                               ? 'Custom Exercise'
                               : 'Edit Exercise',
                           style: IFText.h2)),
-                  const Icon(Icons.fitness_center_rounded, color: IFColors.red),
+                  const Icon(Icons.fitness_center_rounded,
+                      color: IFColors.red),
                 ],
               ),
               const SizedBox(height: 14),
@@ -235,7 +261,8 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
               const SizedBox(height: 10),
               TextField(
                   controller: equipmentController,
-                  decoration: const InputDecoration(labelText: 'Equipment')),
+                  decoration:
+                      const InputDecoration(labelText: 'Equipment')),
               const SizedBox(height: 14),
               Row(
                 children: [
@@ -311,20 +338,22 @@ class _ExerciseRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ForgeCard(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(
+          horizontal: IFSpacing.paddingCard, vertical: 10),
       child: Row(
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
               color: IFColors.red.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(13),
-              border: Border.all(color: IFColors.red.withValues(alpha: 0.25)),
+              borderRadius: BorderRadius.circular(11),
+              border:
+                  Border.all(color: IFColors.red.withValues(alpha: 0.25)),
             ),
-            child: Icon(icon, color: IFColors.red, size: 21),
+            child: Icon(icon, color: IFColors.red, size: 19),
           ),
-          const SizedBox(width: 11),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,7 +368,7 @@ class _ExerciseRow extends StatelessWidget {
                     if (exercise.isCustom)
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 7, vertical: 3),
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: IFColors.red.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(999),
@@ -354,28 +383,31 @@ class _ExerciseRow extends StatelessWidget {
                       ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text('${exercise.equipment} • ${exercise.primaryMuscle}',
+                const SizedBox(height: 3),
+                Text(
+                    '${exercise.equipment} · ${exercise.primaryMuscle}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: IFText.bodyMuted),
+                    style: IFText.micro),
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
           IconButton(
             visualDensity: VisualDensity.compact,
             icon: Icon(
               exercise.isFavorite
                   ? Icons.star_rounded
                   : Icons.star_border_rounded,
-              color: exercise.isFavorite ? IFColors.gold : IFColors.textMuted,
+              color:
+                  exercise.isFavorite ? IFColors.gold : IFColors.textMuted,
+              size: 22,
             ),
             onPressed: onFavorite,
           ),
           if (exercise.isCustom)
             PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert_rounded),
+              icon: const Icon(Icons.more_vert_rounded, size: 20),
               onSelected: (action) {
                 if (action == 'edit') {
                   onEdit?.call();
@@ -403,20 +435,21 @@ class _EquipmentTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ForgeCard(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(
+          horizontal: IFSpacing.paddingCard, vertical: 8),
       child: Row(
         children: [
           Container(
-            width: 34,
-            height: 34,
+            width: 30,
+            height: 30,
             decoration: BoxDecoration(
               color: IFColors.red.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(11),
+              borderRadius: BorderRadius.circular(9),
               border: Border.all(color: IFColors.red.withValues(alpha: 0.22)),
             ),
-            child: Icon(icon, color: IFColors.red, size: 19),
+            child: Icon(icon, color: IFColors.red, size: 16),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 9),
           Expanded(
               child: Text(label,
                   maxLines: 1,
